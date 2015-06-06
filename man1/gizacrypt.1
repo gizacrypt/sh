@@ -1,0 +1,253 @@
+.TH "gizacrypt" 1 "June 2015" "0.1" "Giza Crypt"
+.SH NAME
+.B gizacrypt
+\- Giza command line client 0.1
+.SH SYNOPSIS
+.B  gizacrypt
+[
+.I  ACTION
+] [
+.I  OPTION
+]... [
+.I  FILE
+]
+
+.SH DESCRIPTION
+Giza decrypts secrets retrieved from the Giza format, and encrypts
+secrets into the Giza format.  Giza files are encrypted and double
+signed PGP files.  A Giza file can in addition contain instructions on
+what to do with the file, but these can be overridden using commandline
+options, which are detailed below.
+
+.SH COMMANDS
+.SS Actions
+.IP "--new"
+Set the Action field to "new"
+This makes the uploaded secret the first in its chain.
+
+.IP "--write"
+Set the Action field to "write"
+This makes the uploaded secret to be the next in its chain.
+
+.IP "--update"
+Set the Action field to "update"
+This re-encrypts the secret using different recipients.  The
+payload and metadata must not be changed during this operation.
+The uploaded file may be checked against the previous version,
+to ensure that metadata was not changed.
+
+.IP "--meta"
+Set the Action field to "meta"
+This re-encrypts the secret using different metadata.  The
+payload must not be changed during this operation.
+
+.IP "--revert"
+Upload the payload of the provided old secret as the newest
+version in the chain.  It may be needed to re-encrypt the
+payload, as the list of recipients may have changed in the time
+in between.  The payload will be re-encrypted if the provided
+recipients differ from the recipients that the old secret is
+encrypted for.  Provide the script with the Giza file you want
+to revert to.  This option implies
+.IR --resolve-latest .
+
+.IP "--delete"
+Mark the chain of secrets as deleted. It will no longer show up
+in listings, but can be revived if the UUID of one of the
+secrets is known.
+
+
+.SH OPTIONS
+.SS Metadata
+.IP "--name"
+Set the name of the secret.  This name is used in listings.
+
+.IP "--comment"
+Set a comment for this change.  This is shown in history
+listings.
+
+.IP "--based-on"
+Set the UUID of the secret this secret is based on.  This option
+may also influence the Latest field, which is queried from the
+server.
+
+.IP "--latest"
+Set the UUID that is the latest (newest) in the chain at the
+time of upload.  If the UUID is not the latest, and
+.IR --no-resolve-latest
+is set, the upload will fail.  If
+.IR --resolve-latest
+is set, the provided latest UUID is replaced with the actual latest
+UUID.
+
+.IP "--access ACCESS_LEVEL USER_IDS"
+Set the access level for the identity with the given EMAIL.  The
+USER-IDS are looked up in the local GPG keychain, and should be
+marked with at least marginal trust.  Multiple user ids can be
+set by separating them with pluscharacters (+).  ACCESS must be
+a string that contains any of the words READ+WRITE+ADMIN,
+separated a plus character (+), or the single word NONE.  From
+the shell, an empty string may be represented using two
+identical quotes. (e.g. '')
+
+
+.SS Secret output
+.IP "--callback URL"
+Base URL for REST operations on the Giza server.  This option
+will prevent the secret to be written to local storage.
+
+.IP "--secret-out FILE"
+Path where the new secret is written.
+Use - for stdout.
+
+
+.SS Cleartext output
+.IP "--cleartext-out FILE"
+Path where the cleartext is written.
+Use - for stdout.
+
+.IP "--no-cleartext-out"
+Prevent writing cleartext to the local filesystem or stdout.
+
+
+.SS Cleartext input
+.IP "--cleartext-in FILE"
+The updated secret payload is read from filename.  This option
+will prevent interactive editing.  This option will set the
+method to "upload".  This option will prevent decryption of any
+existing secret.  This option can not be mixed with
+.IR --verbatim ,
+.IR --editor
+or
+.IR --template .
+
+.IP "--editor COMMAND"
+Command that is used to edit the secret payload file.  The
+filepath of the temporary file is appended to the command.  If
+there is no previous secret to edit, the command will be run
+without filepath argument.  The behaviour of this option can be
+changed with
+.IR --template .
+This option can not be mixed with
+.IR --verbatim.
+
+.IP "--template FILE"
+Template for the new secret payload.  This option will prevent
+decryption of any existing secret.  This option will override
+the behaviour of
+.IR --editor ,
+which will be called with a copy of the template.  This option can not
+be mixed with
+.IR --verbatim .
+
+.IP "--content-type CONTENT_TYPE"
+Define the content-type for the input
+
+.IP "--verbatim"
+Do not offer the user any interactive means of changing the contents of
+the cleartext input file before it is encrypted.
+It is recommended to use this option together with
+.IR --cleartext-in .
+This option can not be mixed with
+.IR --editor
+or
+.IR --template .
+
+.SS Flow
+.IP "--[no-]resolve-latest"
+Toggle resolving the latest UUID from the Giza server.
+Not resolving means uploading will fail when the base 
+
+.IP "--[no-]remove-original"
+Toggle removal of the input Giza file.  It is recommended that
+the Giza file be removed after running this command, to ensure
+that no secret information is left on the system, even if it is
+encrypted.
+
+.IP "--[no-]dry-run"
+Toggle dry run mode.  In dry run mode, no cryptographic
+operations are attempted, no files are read or written and no
+network connections are attempted.
+
+.IP "--[no-]hash-name"
+Toggle hashing of the secret name.  This will cause the name
+to appear as a hash in the resulting Giza file, and cause the
+name to be written in cleartext either in a file beside the
+newly generated Giza file, or it being sent in an HTTP header
+when sending to the server.
+
+.IP "--[no-]hash-comment"
+Toggle hashing of the comment.  This will cause the comment
+to appear as a hash in the resulting Giza file, and cause the
+comment to be written in cleartext either in a file beside the
+newly generated Giza file, or it being sent in an HTTP header
+when sending to the server.
+
+.SH ENVIRONMENT
+.IP GIZA_REMOTE
+Name of remote settings.
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+./
+
+.IP GIZA_KEY
+Preferred PGP ID key for cryptographic operations.
+
+
+.SH DIAGNOSTICS
+Using
+.IR --debug ,
+the program will output messages starting with
+.IR CALLED
+to stderr.
+These can be used to trace which functions are entered over the
+course of the execution of the program.
+
+
+.SH BUGS
+.P
+Will season your cat with salt and pepper and eat it in the most fancy
+way ever.
+
+
+.SH AUTHOR
+.P
+Jørn Åne de Jong <jornane at gizacrypt dot io>
+.P
+Tor Gjerde <tor at gizacrypt dot io>
+
+
+.SH SEE ALSO
+.BR gpg (1),
+.BR gpg-agent (1),
