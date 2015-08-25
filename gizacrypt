@@ -111,6 +111,20 @@ get_input_cryptotext() {
 	get_input_cleartext | gpg --quiet --decrypt | awk '/^-----BEGIN PGP MESSAGE-----$/,/^-----END PGP MESSAGE-----$/'
 }
 
+# in: giza from stdin (may read from filesystem instead)
+# out: giza
+get_giza_file_contents() {
+	if [ ${GIZA_INPUT_CONSUMED:-0} -eq 1 ]
+	then
+		echo "$GIZA_INPUT"
+		return 0
+	fi
+	file="$(get_file)"
+	export GIZA_INPUT="$(test -z "$file" && cat || cat "$file")"
+	test -z "$file" || export GIZA_INPUT_CONSUMED=1
+	echo "$GIZA_INPUT"
+}
+
 
 ##############################
 ## CRYPROGRAPHIC OPERATIONS ##
@@ -128,6 +142,22 @@ pgp_encrypt() {
 	recipient_gpg_arguments=$(get_recipient_gpg_arguments)
 	gpg --quiet --armour --encrypt ${recipient_gpg_arguments}
 }
+
+get_recipient_gpg_arguments() {
+	mode='access'
+	get_arguments_for --access | while read line
+	do
+		if [ "$mode" = 'recipients' ]
+		then
+			echo "+$access+" | grep --ignore-case --quiet '+read+' && echo --recipient "$line"
+			mode='access'
+		else
+			access="$line"
+			mode='recipients'
+		fi
+	done
+}
+
 
 ########################
 ## CONTENT OPERATIONS ##
@@ -197,6 +227,107 @@ generate_metadata() {
 	echo '-----END GIZA METADATA-----'
 }
 
+
+######################
+## VARIABLE GETTERS ##
+######################
+
+get_action() {
+	echo 'CALL get_action' >&3
+	get_action_from_arg 2>/dev/null || get_action_from_file
+}
+
+get_output_previous() {
+	echo 'CALL get_output_previous' >&3
+	echo "MISS get_output_previous NOT IMPLEMENTED" >&3
+	return 1
+}
+
+get_output_basedon() {
+	echo 'CALL get_output_basedon' >&3
+	echo "MISS get_output_basedon NOT IMPLEMENTED" >&3
+	return 1
+}
+
+get_output_name_hash() {
+	echo 'CALL get_output_name_hash' >&3
+	echo "MISS get_output_name_hash NOT IMPLEMENTED" >&3
+	return 1
+}
+
+get_output_name_plain() {
+	echo 'CALL get_output_name_plain' >&3
+	get_output_name_plain_from_arg
+	return $?
+}
+
+get_output_comment_hash() {
+	echo 'CALL get_output_comment_hash' >&3
+	echo "MISS get_output_comment_hash NOT IMPLEMENTED" >&3
+	return 1
+}
+
+get_output_comment_plain() {
+	echo 'CALL get_output_comment_plain' >&3
+	get_output_comment_plain_from_arg
+	return $?
+}
+
+get_output_content_type_plain() {
+	echo 'CALL get_output_content_type_plain' >&3
+	get_output_content_type_plain_from_arg 2>/dev/null || \
+	get_output_content_type_from_plain_input
+}
+
+get_input_cleartext_file() {
+	echo 'CALL get_input_cleartext_file' >&3
+	get_input_cleartext_file_from_arg
+}
+
+is_equal_access() {
+	echo 'CALL is_equal_access' >&3
+	echo "MISS is_equal_access NOT IMPLEMENTED" >&3
+	return 1
+}
+
+has_flag_hash_name() {
+	echo 'CALL has_flag_hash_name' >&3
+	echo "MISS has_flag_hash_name NOT IMPLEMENTED" >&3
+	return 1
+}
+
+has_flag_hash_comment() {
+	echo 'CALL has_flag_hash_comment' >&3
+	echo "MISS has_flag_hash_comment NOT IMPLEMENTED" >&3
+	return 1
+}
+
+
+######################################
+## VARIABLE GETTER FROM PLAIN INPUT ##
+######################################
+
+get_output_content_type_from_plain_input() {
+	echo 'CALL get_output_content_type_from_plain_input' >&3
+	contenttype="$(get_input_cleartext | file --mime-type - | cut -d\  -f2)"
+	echo $contenttype
+	return 0
+}
+
+
+##########################################
+## VARIABLE GETTER FROM GIZA INPUT FILE ##
+##########################################
+
+get_action_from_file() {
+
+}
+
+get_command_block_from_file() {
+	get_giza_file_contents | awk '/^-----BEGIN GIZA COMMAND-----$/,/^-----END GIZA COMMAND-----$/'
+}
+
+
 ############################################
 ## COMMANDLINE ARGUMENT HANDLER FUNCTIONS ##
 ############################################
@@ -205,7 +336,24 @@ has_help() {
 	return $(has_flag --help)
 }
 
-get_action() {
+get_file() {
+	last=
+	for arg in $ARGS
+	do
+		last="$arg"
+	done
+	[ "$last" = '' ] && return 1
+	[ "$(echo "$last" | head -c2)" = '--' ] && return 1
+	echo "$last"
+}
+
+
+###########################
+## COMMANDLINE ARGUMENTS ##
+###########################
+
+get_action_from_arg() {
+	echo 'CALL get_action_from_arg' >&3
 	found=0
 	action=
 	for flag in $(get_flags)
@@ -229,45 +377,37 @@ get_action() {
 	else
 		echo 'More than one action specified' >&2
 	fi
+	if ! has_help
+	then
 	echo "$GIZA_USAGE" >&2
 	echo 'Run with --help for usage information.' >&2
+	fi
 	echo >&2
 	return 1
 }
 
-get_file() {
-	last=
-	for arg in $ARGS
-	do
-		last="$arg"
-	done
-	[ "$last" = '' ] && return 1
-	[ "$(echo "$last" | head -c2)" = '--' ] && return 1
-	echo $last
-	return 0
-}
-
-###########################
-## COMMANDLINE ARGUMENTS ##
-###########################
-
-get_input_cleartext_file() {
+get_input_cleartext_file_from_arg() {
+	echo 'CALL get_input_cleartext_file_from_arg' >&3
 	get_arguments_for --cleartext-in
+	return $?
 }
 
-get_recipient_gpg_arguments() {
-	mode='access'
-	get_arguments_for --access | while read line
-	do
-		if [ "$mode" = 'recipients' ]
-		then
-			echo "+$access+" | grep --ignore-case --quiet '+read+' && echo --recipient "$line"
-			mode='access'
-		else
-			access="$line"
-			mode='recipients'
-		fi
-	done
+get_output_comment_plain_from_arg() {
+	echo 'CALL get_output_comment_plain_from_arg' >&3
+	get_arguments_for --comment
+	return $?
+}
+
+get_output_name_plain_from_arg() {
+	echo 'CALL get_output_name_plain_from_arg' >&3
+	get_arguments_for --name
+	return $?
+}
+
+get_output_content_type_plain_from_arg() {
+	echo 'CALL get_output_content_type_plain_from_arg' >&3
+	get_arguments_for --content-type
+	return $?
 }
 
 
@@ -287,6 +427,8 @@ get_skip_for_argument() {
 		'--editor') echo 1;return 0;;
 		'--template') echo 1;return 0;;
 		'--input-content-type') echo 1;return 0;;
+		'--name') echo 1;return 0;;
+		'--comment') echo 1;return 0;;
 		*) echo 0;return 0;;
 	esac	
 }
