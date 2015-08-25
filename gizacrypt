@@ -139,9 +139,10 @@ giza_from_cryptotext() {
 	echo "CALL giza_from_cryptotext" >&3
 	# echo "$(tee)\n$(generate_metadata | pgp_sign)" | pgp_sign
 	contents="$(tee)"
+	metadata=$(generate_metadata)
+	signed_metadata="$(echo "$metadata" | pgp_sign)"
 	contents="$contents
-$(generate_metadata | pgp_sign)"
-	# store in variable to avoid spawning two gpg processes at the same time
+${signed_metadata}"
 	echo "$contents" | pgp_sign
 }
 
