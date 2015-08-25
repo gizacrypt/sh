@@ -17,12 +17,13 @@ usage() {
 
 main() {
 	exec 3>/dev/null
-	if [ has_flag --debug ]
+	if has_flag --debug >/dev/null
 	then
 		exec 3>&2
 	fi
 
-	[ ! get_action > /dev/null ] || has_help && usage && exit 0
+	if get_action >/dev/null
+	then
 	case $(get_action) in
 		'read')   flow_read;break;;
 		'new')    flow_new;break;;
@@ -32,6 +33,10 @@ main() {
 		'revert') flow_revert;break;;
 		'delete') flow_delete;break;;
 	esac
+	else
+		has_help && usage
+		return 0
+	fi
 	return $?
 }
 
@@ -52,7 +57,7 @@ flow_update() {
 }
 
 flow_meta() {
-	if [ is_equal_access ]
+	if is_equal_access >/dev/null
 	then
 		get_cryptotext | giza_from_cryptotext | write_cryptotext_output
 	else
@@ -169,14 +174,14 @@ generate_metadata() {
 		echo "Based-On: $(get_output_basedon)"
 	fi
 
-	if [ has_flag_hash_name ]
+	if has_flag_hash_name >/dev/null
 	then
 		echo "Name-Hash: $(get_output_name_hash)"
 	else
 		echo "Name: $(get_output_name_plain)"
 	fi
 
-	if [ has_flag_hash_comment ]
+	if has_flag_hash_comment >/dev/null
 	then
 		echo "Comment-Hash: $(get_output_comment_hash)"
 	else
@@ -214,6 +219,7 @@ get_action() {
 	if [ $found -eq 1 ]
 	then
 		echo $action
+		return 0
 	elif [ $found -eq 0 ]
 	then
 		echo 'No action specified.' >&2
@@ -304,10 +310,11 @@ has_flag() {
 		if [ "$flag" = "$find_flag" ]
 		then
 			echo 0
-			return
+			return 0
 		fi
 	done
 	echo 1
+	return 1
 }
 
 get_arguments_for() {
