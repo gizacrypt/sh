@@ -7,7 +7,7 @@ GIZA_USAGE="usage: $PROGNAME [OPTION]... [FILE]"
 set -e
 
 usage() {
-	man -M ./ "$PROGNAME"
+	man -M "$PROGDIR/" "$PROGNAME"
 }
 
 
