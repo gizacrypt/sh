@@ -75,6 +75,7 @@ flow_delete() {
 	giza_delete | write_cryptotext_output
 }
 
+
 ###########################
 ## DESTRUCTIVE FUNCTIONS ##
 ###########################
@@ -82,14 +83,14 @@ flow_delete() {
 # in: cryptotext
 # out: cryptotext (may write to file instead)
 write_cryptotext_output() {
-	# TODO: support different outputs
+	# TODO: support different outputs, eg file or curl
 	tee
 }
 
 # in: cleartext
 # out: cleartext (may write to file instead)
 write_cleartext_output() {
-	# TODO: support different outputs
+	# TODO: support different outputs, eg file or curl
 	tee
 }
 
@@ -97,7 +98,7 @@ get_input_cleartext() {
 	file="$(get_input_cleartext_file)"
 	if [ -z "$file" ]
 	then
-		echo "CALLED get_input_cleartext AND --cleartext-in NOT SET" >&3
+		echo "CALL get_input_cleartext AND --cleartext-in NOT SET" >&3
 		get_input_cryptotext | gpg --quiet --decrypt
 	else
 		cat "$file"
@@ -116,14 +117,14 @@ get_input_cryptotext() {
 ##############################
 
 pgp_sign() {
-	echo "CALLED pgp_sign" >&3
+	echo "CALL pgp_sign" >&3
 	gpg --quiet --clearsign
 }
 
 # in: cleartext
 # out: cryptotext
 pgp_encrypt() {
-	echo "CALLED pgp_encrypt" >&3
+	echo "CALL pgp_encrypt" >&3
 	recipient_gpg_arguments=$(get_recipient_gpg_arguments)
 	gpg --quiet --armour --encrypt ${recipient_gpg_arguments}
 }
@@ -135,7 +136,7 @@ pgp_encrypt() {
 # in: cryptotext
 # out: giza
 giza_from_cryptotext() {
-	echo "CALLED giza_from_cryptotext" >&3
+	echo "CALL giza_from_cryptotext" >&3
 	# echo "$(tee)\n$(generate_metadata | pgp_sign)" | pgp_sign
 	contents="$(tee)"
 	contents="$contents
@@ -147,13 +148,13 @@ $(generate_metadata | pgp_sign)"
 # in: cleartext
 # out: giza
 giza_from_cleartext() {
-	echo "CALLED giza_from_cleartext" >&3
+	echo "CALL giza_from_cleartext" >&3
 	pgp_encrypt | giza_from_cryptotext
 }
 
 # out: giza
 giza_delete() {
-	echo "CALLED giza_delete" >&3
+	echo "CALL giza_delete" >&3
 	# double sign for consistency,
 	# no concatenation of content is required though
 	generate_metadata | pgp_sign | pgp_sign
@@ -268,6 +269,7 @@ get_recipient_gpg_arguments() {
 	done
 }
 
+
 ############################################
 ## COMMANDLINE ARGUMENT PARSING FUNCTIONS ##
 ############################################
@@ -340,7 +342,7 @@ get_arguments_for() {
 	done
 	if [ $found -eq 0 ]
 	then
-		echo "Argument $find_flag missing $found" >&2
+		echo "Argument $find_flag expected but missing" >&2
 		return 1
 	fi
 	if [ $skip -gt 0 ]
@@ -349,6 +351,7 @@ get_arguments_for() {
 		return 1
 	fi
 }
+
 
 ########################
 ## THAT'S ALL, FOLKS! ##
