@@ -3,6 +3,7 @@ GIZA_VERSION="0.1"
 PROGNAME="$(basename "$0")"
 PROGDIR="$(dirname "$0")"
 ARGS="$@"
+[ "x$NOW" = 'x' ] && NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 GIZA_USAGE="usage: $PROGNAME [OPTION]... [FILE]"
 set -e
 
@@ -163,7 +164,7 @@ generate_metadata() {
 	echo '-----BEGIN GIZA METADATA-----'
 	echo "Giza-Version: ${GIZA_VERSION}"
 	echo "Action: $(get_action)"
-	echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+	echo "Date: ${NOW}"
 	echo "Revision: $(uuidgen | tr '[:upper:]' '[:lower:]')"
 	if [ ! -z "$(get_output_previous)" ]
 	then
