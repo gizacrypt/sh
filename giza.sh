@@ -26,15 +26,15 @@ main() {
 
 	if get_action >/dev/null
 	then
-	case $(get_action) in
-		'read')   flow_read;break;;
-		'new')    flow_new;break;;
-		'write')  flow_write;break;;
-		'update') flow_update;break;;
-		'meta')   flow_meta;break;;
-		'revert') flow_revert;break;;
-		'delete') flow_delete;break;;
-	esac
+		case $(get_action) in
+			'read')   flow_read;break;;
+			'new')    flow_new;break;;
+			'write')  flow_write;break;;
+			'update') flow_update;break;;
+			'meta')   flow_meta;break;;
+			'revert') flow_revert;break;;
+			'delete') flow_delete;break;;
+		esac
 	else
 		has_help && usage || echo $GIZA_USAGE >&2
 		return 0
@@ -382,8 +382,8 @@ get_action_from_arg() {
 	fi
 	if ! has_help
 	then
-	echo "$GIZA_USAGE" >&2
-	echo 'Run with --help for usage information.' >&2
+		echo "$GIZA_USAGE" >&2
+		echo 'Run with --help for usage information.' >&2
 	fi
 	echo >&2
 	return 1
@@ -433,7 +433,7 @@ get_skip_for_argument() {
 		'--name') echo 1;return 0;;
 		'--comment') echo 1;return 0;;
 		*) echo 0;return 0;;
-	esac	
+	esac
 }
 
 # Write all flags to stdout
