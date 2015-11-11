@@ -8,5 +8,6 @@ giza:
 	chmod +x giza
 
 install: giza
-	install -m 0755 giza $(prefix)/bin
-	install -m 0644 man1/* $(prefix)/share/man/man1
+	install -m 0755 giza $(prefix)/bin/giza
+	install -m 0755 giza-validate.sh $(prefix)/bin/giza-validate
+	install -m 0644 man1/giza.1 $(prefix)/share/man/man1/giza.1
