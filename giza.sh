@@ -49,7 +49,12 @@ flow_read() {
 
 flow_new() {
 	echo "FLOW new" >&3
-	get_input_cleartext | giza_from_cleartext | write_cryptotext_output
+	echo "INFO obtaining cleartext" >&3
+	clear="$(get_input_cleartext)"
+	echo "INFO encrypt using giza" >&3
+	giza="$(echo "$clear" | giza_from_cleartext)"
+	echo "INFO writing" >&3
+	echo "$giza" | write_cryptotext_output
 }
 
 flow_write() {
@@ -105,13 +110,19 @@ write_cleartext_output() {
 
 get_input_cleartext() {
 	echo "CALL get_input_cleartext" >&3
-	file="$(get_input_cleartext_file 2>/dev/null || true)"
-	if [ -z "$file" ]
+	if has_flag --cleartext-in >/dev/null
 	then
-		echo "ARGU --cleartext-in NOT SET" >&3
-		get_input_cryptotext | gpg --quiet --decrypt
+		file="$(get_input_cleartext_file)"
+		cat "$file" && return 0 || return 1
+	fi
+	echo "INFO getting cleartext by decrypting cryptotext" >&3
+	cryptotext="$(get_input_cryptotext)" || true
+	if test -n "$cryptotext"
+	then
+		echo "$cryptotext" | gpg --quiet --decrypt
 	else
-		cat "$file"
+		echo "INFO got no cryptotext, reading from stdin" >&3
+		tee
 	fi
 }
 
@@ -119,8 +130,16 @@ get_input_cleartext() {
 # out: cryptotext
 get_input_cryptotext() {
 	echo "CALL get_input_cryptotext" >&3
-	gpg --quiet --decrypt --no-tty --batch < "$(get_file)" 2>/dev/null \
+	file="$(get_file)" || return 1
+	echo "VARI file=$file" >&3
+	if test -r "$file"
+	then
+		gpg --quiet --decrypt --no-tty --batch < "$file" 2>/dev/null \
 		| awk '/^-----BEGIN PGP MESSAGE-----$/,/^-----END PGP MESSAGE-----$/'
+	else
+		echo "IOER cannot read $file" >&3
+		return 1
+	fi
 }
 
 # in: giza from stdin (may read from filesystem instead)
@@ -152,10 +171,19 @@ pgp_sign() {
 pgp_encrypt() {
 	echo "CALL pgp_encrypt" >&3
 	recipient_gpg_arguments=$(get_recipient_gpg_arguments)
+	echo "ARGS $recipient_gpg_arguments" >&3
+	if test -n "$recipient_gpg_arguments"
+	then
 	gpg --quiet --armour --encrypt ${recipient_gpg_arguments}
+	else
+		echo "FAIL cannot make a working gpg command" >&3
+		return 1
+	fi
+
 }
 
 get_recipient_gpg_arguments() {
+	echo "CALL get_recipient_gpg_arguments" >&3
 	mode='access'
 	get_arguments_for --access | while read line
 	do
@@ -192,7 +220,8 @@ ${signed_metadata}"
 # out: giza
 giza_from_cleartext() {
 	echo "CALL giza_from_cleartext" >&3
-	pgp_encrypt | giza_from_cryptotext
+	cryptotext="$(pgp_encrypt)"
+	echo "$cryptotext" | giza_from_cryptotext
 }
 
 # out: giza
@@ -221,16 +250,20 @@ generate_metadata() {
 
 	if has_flag_hash_name >/dev/null
 	then
-		echo "Name-Hash: $(get_output_name_hash)"
+		echo -n 'Name-Hash: '
+		get_output_name_hash
 	else
-		echo "Name: $(get_output_name_plain)"
+		echo -n 'Name: '
+		get_output_name_plain
 	fi
 
 	if has_flag_hash_comment >/dev/null
 	then
-		echo "Comment-Hash: $(get_output_comment_hash)"
+		echo -n 'Comment-Hash: '
+		get_output_comment_hash
 	else
-		echo "Comment: $(get_output_comment_plain)"
+		echo -n 'Comment: '
+		get_output_comment_plain
 	fi
 
 	## TODO: Access
@@ -319,8 +352,9 @@ has_flag_hash_comment() {
 
 get_output_content_type_from_plain_input() {
 	echo 'CALL get_output_content_type_from_plain_input' >&3
-	contenttype="$(get_input_cleartext | file --mime-type - | cut -d\  -f2)"
-	echo $contenttype
+	cleartext="$(get_input_cleartext)"
+	contenttype="$(echo "$cleartext" | file --mime-type - | cut -d\  -f2)"
+	echo "$contenttype"
 	return 0
 }
 
@@ -384,6 +418,7 @@ get_action_from_arg() {
 	if [ $found -eq 1 ]
 	then
 		echo $action
+		echo "VARI action=$action" >&3
 		return 0
 	elif [ $found -eq 0 ]
 	then
