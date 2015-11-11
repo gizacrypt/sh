@@ -7,7 +7,7 @@ ARGS="$@"
 [ "x$GIZA_NOW" = 'x' ] && GIZA_NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)" ||\
 	echo 'WARNING: $GIZA_NOW is set, not using current time!' >&2
 GIZA_USAGE="usage: $PROGNAME [OPTION]... [FILE]"
-set -e
+set -eu
 
 usage() {
 	man -M "$PROGDIR/" giza
