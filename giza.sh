@@ -333,9 +333,11 @@ get_output_content_type_from_plain_input() {
 ##########################################
 
 get_action_from_file() {
+	action="$(get_command_block_from_file | sed -n '/Action:/ s/.*: //p')"
 	echo 'CALL get_action_from_file' >&3
-	echo "MISS get_action_from_file NOT IMPLEMENTED" >&3
-	return 1
+	echo "VARI action=$action" >&3
+	echo $action
+	return 0
 }
 
 get_command_block_from_file() {
