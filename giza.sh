@@ -1,4 +1,5 @@
 #!/bin/sh
+true
 GIZA_VERSION="0.1"
 PROGNAME="$(basename "$0")"
 PROGDIR="$(dirname "$0")"
@@ -504,3 +505,4 @@ get_arguments_for() {
 ########################
 
 main
+exit $?
