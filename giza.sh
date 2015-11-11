@@ -106,7 +106,7 @@ write_cleartext_output() {
 
 get_input_cleartext() {
 	echo "CALL get_input_cleartext" >&3
-	file="$(get_input_cleartext_file)"
+	file="$(get_input_cleartext_file 2>/dev/null || true)"
 	if [ -z "$file" ]
 	then
 		echo "ARGU --cleartext-in NOT SET" >&3
@@ -119,7 +119,9 @@ get_input_cleartext() {
 # in: giza
 # out: cryptotext
 get_input_cryptotext() {
-	get_input_cleartext | gpg --quiet --decrypt | awk '/^-----BEGIN PGP MESSAGE-----$/,/^-----END PGP MESSAGE-----$/'
+	echo "CALL get_input_cryptotext" >&3
+	gpg --quiet --decrypt --no-tty --batch < "$(get_file)" 2>/dev/null \
+		| awk '/^-----BEGIN PGP MESSAGE-----$/,/^-----END PGP MESSAGE-----$/'
 }
 
 # in: giza from stdin (may read from filesystem instead)
