@@ -44,22 +44,27 @@ main() {
 }
 
 flow_read() {
+	echo "FLOW read" >&3
 	get_input_cleartext | write_cleartext_output
 }
 
 flow_new() {
+	echo "FLOW new" >&3
 	get_input_cleartext | giza_from_cleartext | write_cryptotext_output
 }
 
 flow_write() {
+	echo "FLOW write" >&3
 	get_input_cleartext | edit_cleartext | giza_from_cleartext | write_cryptotext_output
 }
 
 flow_update() {
+	echo "FLOW update" >&3
 	get_input_cleartext | giza_from_cleartext | write_cryptotext_output
 }
 
 flow_meta() {
+	echo "FLOW meta" >&3
 	if is_equal_access >/dev/null
 	then
 		get_cryptotext | giza_from_cryptotext | write_cryptotext_output
@@ -69,11 +74,14 @@ flow_meta() {
 }
 
 flow_revert() {
+	echo "FLOW revert" >&3
+	echo "MISS flow revert NOT IMPLEMENTED" >&3
 	# TODO
 	return 1
 }
 
 flow_delete() {
+	echo "FLOW delete" >&3
 	giza_delete | write_cryptotext_output
 }
 
@@ -97,10 +105,11 @@ write_cleartext_output() {
 }
 
 get_input_cleartext() {
+	echo "CALL get_input_cleartext" >&3
 	file="$(get_input_cleartext_file)"
 	if [ -z "$file" ]
 	then
-		echo "CALL get_input_cleartext AND --cleartext-in NOT SET" >&3
+		echo "ARGU --cleartext-in NOT SET" >&3
 		get_input_cryptotext | gpg --quiet --decrypt
 	else
 		cat "$file"
