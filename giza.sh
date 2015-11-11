@@ -35,7 +35,6 @@ main() {
 			'delete') flow_delete;break;;
 		*)        flow_help;break;;
 		esac
-	return $?
 }
 
 flow_help() {
@@ -271,7 +270,6 @@ get_output_name_hash() {
 get_output_name_plain() {
 	echo 'CALL get_output_name_plain' >&3
 	get_output_name_plain_from_arg
-	return $?
 }
 
 get_output_comment_hash() {
@@ -283,7 +281,6 @@ get_output_comment_hash() {
 get_output_comment_plain() {
 	echo 'CALL get_output_comment_plain' >&3
 	get_output_comment_plain_from_arg
-	return $?
 }
 
 get_output_content_type_plain() {
@@ -406,25 +403,21 @@ get_action_from_arg() {
 get_input_cleartext_file_from_arg() {
 	echo 'CALL get_input_cleartext_file_from_arg' >&3
 	get_arguments_for --cleartext-in
-	return $?
 }
 
 get_output_comment_plain_from_arg() {
 	echo 'CALL get_output_comment_plain_from_arg' >&3
 	get_arguments_for --comment
-	return $?
 }
 
 get_output_name_plain_from_arg() {
 	echo 'CALL get_output_name_plain_from_arg' >&3
 	get_arguments_for --name
-	return $?
 }
 
 get_output_content_type_plain_from_arg() {
 	echo 'CALL get_output_content_type_plain_from_arg' >&3
 	get_arguments_for --content-type
-	return $?
 }
 
 
