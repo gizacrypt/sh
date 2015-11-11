@@ -10,7 +10,7 @@ GIZA_USAGE="usage: $PROGNAME [OPTION]... [FILE]"
 set -e
 
 usage() {
-	man -M "$PROGDIR/" "$PROGNAME"
+	man -M "$PROGDIR/" giza
 }
 
 
@@ -25,8 +25,6 @@ main() {
 		exec 3>&2
 	fi
 
-	if get_action >/dev/null
-	then
 		case $(get_action) in
 			'read')   flow_read;break;;
 			'new')    flow_new;break;;
@@ -35,12 +33,14 @@ main() {
 			'meta')   flow_meta;break;;
 			'revert') flow_revert;break;;
 			'delete') flow_delete;break;;
+		*)        flow_help;break;;
 		esac
-	else
-		has_help && usage || echo $GIZA_USAGE >&2
-		return 0
-	fi
 	return $?
+}
+
+flow_help() {
+	has_help && usage || echo "$GIZA_USAGE" >&2
+	return 0
 }
 
 flow_read() {
@@ -350,7 +350,7 @@ get_command_block_from_file() {
 ############################################
 
 has_help() {
-	return $(has_flag --help)
+	has_flag --help
 }
 
 get_file() {
@@ -472,11 +472,9 @@ has_flag() {
 	do
 		if [ "$flag" = "$find_flag" ]
 		then
-			echo 0
 			return 0
 		fi
 	done
-	echo 1
 	return 1
 }
 
