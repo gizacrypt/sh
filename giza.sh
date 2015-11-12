@@ -25,16 +25,16 @@ main() {
 		exec 3>&2
 	fi
 
-		case $(get_action) in
-			'read')   flow_read;break;;
-			'new')    flow_new;break;;
-			'write')  flow_write;break;;
-			'update') flow_update;break;;
-			'meta')   flow_meta;break;;
-			'revert') flow_revert;break;;
-			'delete') flow_delete;break;;
+	case $(get_action) in
+		'read')   flow_read;break;;
+		'new')    flow_new;break;;
+		'write')  flow_write;break;;
+		'update') flow_update;break;;
+		'meta')   flow_meta;break;;
+		'revert') flow_revert;break;;
+		'delete') flow_delete;break;;
 		*)        flow_help;break;;
-		esac
+	esac
 }
 
 flow_help() {
@@ -135,7 +135,7 @@ get_input_cryptotext() {
 	if test -r "$file"
 	then
 		gpg --quiet --decrypt --no-tty --batch < "$file" 2>/dev/null \
-		| awk '/^-----BEGIN PGP MESSAGE-----$/,/^-----END PGP MESSAGE-----$/'
+			| awk '/^-----BEGIN PGP MESSAGE-----$/,/^-----END PGP MESSAGE-----$/'
 	else
 		echo "IOER cannot read $file" >&3
 		return 1
@@ -174,12 +174,11 @@ pgp_encrypt() {
 	echo "ARGS $recipient_gpg_arguments" >&3
 	if test -n "$recipient_gpg_arguments"
 	then
-	gpg --quiet --armour --encrypt ${recipient_gpg_arguments}
+		gpg --quiet --armour --encrypt ${recipient_gpg_arguments}
 	else
 		echo "FAIL cannot make a working gpg command" >&3
 		return 1
 	fi
-
 }
 
 get_recipient_gpg_arguments() {
