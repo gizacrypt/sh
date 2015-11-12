@@ -278,7 +278,7 @@ generate_metadata() {
 
 get_action() {
 	echo 'CALL get_action' >&3
-	get_action_from_arg 2>/dev/null || get_action_from_file 2>/dev/null
+	get_action_from_arg 2>/dev/null || get_action_command_from_file 2>/dev/null
 }
 
 get_output_previous() {
@@ -362,12 +362,11 @@ get_output_content_type_from_plain_input() {
 ## VARIABLE GETTER FROM GIZA INPUT FILE ##
 ##########################################
 
-get_action_from_file() {
+get_action_command_from_file() {
 	action="$(get_command_block_from_file | sed -n '/Action:/ s/.*: //p')"
-	echo 'CALL get_action_from_file' >&3
+	echo 'CALL get_action_command_from_file' >&3
 	echo "VARI action=$action" >&3
-	echo $action
-	return 0
+	echo "$action"
 }
 
 get_command_block_from_file() {
