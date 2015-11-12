@@ -44,6 +44,13 @@ flow_help() {
 
 flow_read() {
 	echo "FLOW read" >&3
+	if test -t 1 -a "$(get_method_command_from_file)" = 'save'
+	then
+		echo 'You cannot display this secret on your terminal,' >&2
+		echo 'use output redirection instead.' >&2
+		return 1
+	fi
+
 	get_input_cleartext | write_cleartext_output
 }
 
@@ -367,6 +374,13 @@ get_action_command_from_file() {
 	echo 'CALL get_action_command_from_file' >&3
 	echo "VARI action=$action" >&3
 	echo "$action"
+}
+
+get_method_command_from_file() {
+	method="$(get_command_block_from_file | sed -n '/Method:/ s/.*: //p')"
+	echo 'CALL get_method_command_from_file' >&3
+	echo "VARI method=$method" >&3
+	echo "$method"
 }
 
 get_command_block_from_file() {
