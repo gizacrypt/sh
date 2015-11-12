@@ -39,7 +39,6 @@ main() {
 
 flow_help() {
 	has_help && usage || echo "$GIZA_USAGE" >&2
-	return 0
 }
 
 flow_read() {
@@ -361,7 +360,6 @@ get_output_content_type_from_plain_input() {
 	cleartext="$(get_input_cleartext)"
 	contenttype="$(echo "$cleartext" | file --mime-type - | cut -d\  -f2)"
 	echo "$contenttype"
-	return 0
 }
 
 
@@ -486,7 +484,7 @@ get_skip_for_argument() {
 		'--input-content-type') echo 1;return 0;;
 		'--name') echo 1;return 0;;
 		'--comment') echo 1;return 0;;
-		*) echo 0;return 0;;
+		*) echo 0
 	esac
 }
 
