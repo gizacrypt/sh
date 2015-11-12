@@ -10,7 +10,7 @@ GIZA_USAGE="usage: $PROGNAME [OPTION]... [FILE]"
 set -eu
 
 usage() {
-	man -M "$PROGDIR/" giza
+	test -f "$PROGDIR/man1/giza.1" && man -M "$PROGDIR/" giza || man giza
 }
 
 
