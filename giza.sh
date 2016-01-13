@@ -419,6 +419,7 @@ get_action_from_arg() {
 	for flag in $(get_flags)
 	do
 		case "$flag" in
+			'--read') action='read';found=$((found+1));continue;;
 			'--new') action='new';found=$((found+1));continue;;
 			'--write') action='write';found=$((found+1));continue;;
 			'--update') action='update';found=$((found+1));continue;;
