@@ -114,6 +114,8 @@ write_cleartext_output() {
 	tee
 }
 
+# in: cleartext, only if not obtained through other means
+# out: cleartext
 get_input_cleartext() {
 	echo "CALL get_input_cleartext" >&3
 	if has_flag --cleartext-in >/dev/null
@@ -127,7 +129,7 @@ get_input_cleartext() {
 	then
 		echo "$cryptotext" | gpg --quiet --decrypt
 	else
-		echo "INFO got no cryptotext, reading from stdin" >&3
+		echo "INFO got no cryptotext, reading cleartext from stdin" >&3
 		tee
 	fi
 }
