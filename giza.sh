@@ -426,6 +426,10 @@ get_action_from_arg() {
 			'--meta') action='meta';found=$((found+1));continue;;
 			'--revert') action='revert';found=$((found+1));continue;;
 			'--delete') action='delete';found=$((found+1));continue;;
+
+			# Aliases
+			'--decrypt') action='read';found=$((found+1));continue;;
+			'--edit') action='write';found=$((found+1));continue;;
 		esac
 	done
 	if [ $found -eq 1 ]
@@ -487,7 +491,21 @@ get_skip_for_argument() {
 		'--input-content-type') echo 1;return 0;;
 		'--name') echo 1;return 0;;
 		'--comment') echo 1;return 0;;
-		*) echo 0
+
+		# Various
+		'--debug') echo 0;return 0;;
+		'--read') echo 0;return 0;;
+		'--new') echo 0;return 0;;
+		'--write') echo 0;return 0;;
+		'--update') echo 0;return 0;;
+		'--meta') echo 0;return 0;;
+		'--revert') echo 0;return 0;;
+		'--delete') echo 0;return 0;;
+
+		# Aliases
+		'--decrypt') echo 0;return 0;;
+		'--edit') echo 0;return 0;;
+		*) echo "FAIL unknown argument $arg" >&3;echo 0
 	esac
 }
 
