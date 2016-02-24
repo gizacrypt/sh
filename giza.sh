@@ -1,5 +1,7 @@
 #!/bin/sh
 true
+
+test -t 0 && TTY="$(tty)"
 GIZA_VERSION="0.1"
 PROGNAME="$(basename "$0")"
 PROGDIR="$(dirname "$0")"
@@ -65,7 +67,9 @@ flow_new() {
 
 flow_write() {
 	echo "FLOW write" >&3
-	get_input_cleartext | edit_cleartext | giza_from_cleartext | write_cryptotext_output
+	clear="$(get_input_cleartext)"
+	edited="$(echo "$clear" | edit_cleartext)"
+	echo "$edited" | giza_from_cleartext | write_cryptotext_output
 }
 
 flow_update() {
@@ -273,12 +277,64 @@ generate_metadata() {
 		get_output_comment_plain
 	fi
 
-	## TODO: Access
+	generate_access_metadata
 
 	echo "Content-Type: $(get_output_content_type_plain)"
 	echo '-----END GIZA METADATA-----'
 }
 
+edit_cleartext() {
+	echo 'CALL edit_cleartext' >&3
+	tmpdir="/tmp/giza.$(id -u)"
+	mkdir -p $tmpdir
+	tee > "$tmpdir/giza_clear.bin"
+	${EDITOR:=vim} "$tmpdir/giza_clear.bin" < "$TTY" > "$TTY"
+	cat "$tmpdir/giza_clear.bin" && rm "$tmpdir/giza_clear.bin"
+}
+
+generate_access_metadata() {
+	mode='access'
+	get_arguments_for --access >&3
+	get_arguments_for --access | while read line
+	do
+		if [ "$mode" = 'recipients' ]
+		then
+			echo -n 'Access: ' 
+			s='' # splitter
+			echo "+$access+" | grep --ignore-case --quiet '+read+' && echo -n "${s}READ" && s='+'
+			echo "+$access+" | grep --ignore-case --quiet '+write+' && echo -n "${s}WRITE" && s='+'
+			echo "+$access+" | grep --ignore-case --quiet '+admin+' && echo -n "${s}ADMIN"
+			mode='access'
+			echo -n " $(get_key_id_for_freetext "$line")"
+			echo " $(get_key_name_for_freetext "$line")"
+		else
+			access="$line"
+			mode='recipients'
+		fi
+	done
+}
+
+get_key_id_for_freetext() {
+	gpg --with-colons --list-keys "$1" | grep ^uid | while read key
+	do
+		if test "x$(echo "$key" | cut -d: -f2)" = "x-"
+		then
+			echo "$key" | cut -d: -f8
+			return
+		fi
+	done
+}
+
+get_key_name_for_freetext() {
+	gpg --with-colons --list-keys "$1" | grep ^uid | while read key
+	do
+		if test "x$(echo "$key" | cut -d: -f2)" = "x-"
+		then
+			echo "$key" | cut -d: -f10
+			return
+		fi
+	done
+}
 
 ######################
 ## VARIABLE GETTERS ##
