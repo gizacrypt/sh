@@ -163,7 +163,9 @@ get_giza_file_contents() {
 		return 0
 	fi
 	file="$(get_file)"
+	echo "INFO Consuming file $file" >&3
 	export GIZA_INPUT="$(test -z "$file" && cat || cat "$file")"
+	echo 'INFO Consumed' >&3
 	test -z "$file" || export GIZA_INPUT_CONSUMED=1
 	echo "$GIZA_INPUT"
 }
@@ -454,9 +456,21 @@ has_help() {
 
 get_file() {
 	last=
+	skip=0
 	for arg in $ARGS
 	do
-		last="$arg"
+		if [ $skip -gt 0 ]
+		then
+			skip=$((skip-1))
+			last=
+			continue
+		else
+			skip=$(get_skip_for_argument "$arg")
+			if [ $skip -eq 0 ]
+			then
+				last="$arg"
+			fi
+		fi
 	done
 	[ "$last" = '' ] && return 1
 	[ "$(echo "$last" | head -c2)" = '--' ] && return 1
@@ -561,6 +575,9 @@ get_skip_for_argument() {
 		# Aliases
 		'--decrypt') echo 0;return 0;;
 		'--edit') echo 0;return 0;;
+
+		# stdin
+		'-') echo 0;return 0;;
 		*) echo "FAIL unknown argument $arg" >&3;echo 0
 	esac
 }
