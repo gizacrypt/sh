@@ -192,17 +192,9 @@ pgp_encrypt() {
 
 get_recipient_gpg_arguments() {
 	echo "${GIZA_OUT_CALL:-CALL} get_recipient_gpg_arguments${GIZA_OUT_RESET:-}" >&3
-	mode='access'
-	get_arguments_for --access | while read line
+	get_all_pgp_key_ids_with_read_access | while read key
 	do
-		if [ "$mode" = 'recipients' ]
-		then
-			echo "+$access+" | grep --ignore-case --quiet '+read+' && echo --recipient "$line"
-			mode='access'
-		else
-			access="$line"
-			mode='recipients'
-		fi
+		echo --recipient "$key"
 	done
 }
 
@@ -290,50 +282,6 @@ edit_cleartext() {
 	cat "$tmpdir/giza_clear.bin" && rm "$tmpdir/giza_clear.bin"
 }
 
-generate_access_metadata() {
-	mode='access'
-	get_arguments_for --access >&3
-	get_arguments_for --access | while read line
-	do
-		if [ "$mode" = 'recipients' ]
-		then
-			echo -n 'Access: ' 
-			s='' # splitter
-			echo "+$access+" | grep --ignore-case --quiet '+read+' && echo -n "${s}READ" && s='+'
-			echo "+$access+" | grep --ignore-case --quiet '+write+' && echo -n "${s}WRITE" && s='+'
-			echo "+$access+" | grep --ignore-case --quiet '+admin+' && echo -n "${s}ADMIN"
-			mode='access'
-			echo -n " $(get_key_id_for_freetext "$line")"
-			echo " $(get_key_name_for_freetext "$line")"
-		else
-			access="$line"
-			mode='recipients'
-		fi
-	done
-}
-
-get_key_id_for_freetext() {
-	gpg --with-colons --list-keys "$1" | grep ^uid | while read key
-	do
-		if test "x$(echo "$key" | cut -d: -f2)" = "x-"
-		then
-			echo "$key" | cut -d: -f8
-			return
-		fi
-	done
-}
-
-get_key_name_for_freetext() {
-	gpg --with-colons --list-keys "$1" | grep ^uid | while read key
-	do
-		if test "x$(echo "$key" | cut -d: -f2)" = "x-"
-		then
-			echo "$key" | cut -d: -f10
-			return
-		fi
-	done
-}
-
 ######################
 ## VARIABLE GETTERS ##
 ######################
@@ -363,7 +311,11 @@ get_output_name_hash() {
 
 get_output_name_plain() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_name_plain${GIZA_OUT_RESET:-}" >&3
-	get_output_name_plain_from_arg
+	name="$(get_output_name_plain_from_arg || true)"
+	test -z "$name" && name="$(get_output_name_plain_from_command || true)"
+	test -z "$name" && name="$(get_output_name_plain_from_metadata || true)"
+	echo "$name"
+	test -n "$name"
 }
 
 get_output_comment_hash() {
@@ -374,7 +326,11 @@ get_output_comment_hash() {
 
 get_output_comment_plain() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_comment_plain${GIZA_OUT_RESET:-}" >&3
-	get_output_comment_plain_from_arg
+	comment="$(get_output_comment_plain_from_arg || true)"
+	test -z "$comment" && comment="$(get_output_comment_plain_from_command || true)"
+	test -z "$comment" && comment="$(get_output_comment_plain_from_metadata || true)"
+	echo "$comment"
+	test -n "$comment"
 }
 
 get_output_content_type_plain() {
@@ -439,6 +395,215 @@ get_method_command_from_file() {
 
 get_command_block_from_file() {
 	get_giza_file_contents | awk '/^-----BEGIN GIZA COMMAND-----$/,/^-----END GIZA COMMAND-----$/'
+}
+
+get_metadata_block_from_file() {
+	get_giza_file_contents | awk '/^-----BEGIN GIZA METADATA-----$/,/^-----END GIZA METADATA-----$/'
+}
+
+get_output_name_plain_from_command() {
+	echo "${GIZA_OUT_CALL:-CALL} get_output_name_plain_from_command${GIZA_OUT_RESET:-}" >&3
+	name="$(get_command_block_from_file | sed -n '/Name:/ s/.*: //p')"
+	echo "VARI name=$name" >&3
+	echo "$name"
+}
+
+get_output_name_plain_from_metadata() {
+	echo "${GIZA_OUT_CALL:-CALL} get_output_name_plain_from_metadata${GIZA_OUT_RESET:-}" >&3
+	name="$(get_metadata_block_from_file | sed -n '/Name:/ s/.*: //p')"
+	echo "VARI name=$name" >&3
+	echo "$name"
+}
+
+get_output_comment_plain_from_command() {
+	echo "${GIZA_OUT_CALL:-CALL} get_output_comment_plain_from_command${GIZA_OUT_RESET:-}" >&3
+	comment="$(get_command_block_from_file | sed -n '/Comment:/ s/.*: //p')"
+	echo "VARI comment=$comment" >&3
+	echo "$comment"
+}
+
+get_output_comment_plain_from_metadata() {
+	echo "${GIZA_OUT_CALL:-CALL} get_output_comment_plain_from_metadata${GIZA_OUT_RESET:-}" >&3
+	comment="$(get_metadata_block_from_file | sed -n '/Comment:/ s/.*: //p')"
+	echo "VARI comment=$comment" >&3
+	echo "$comment"
+}
+
+##############################
+## ACCESS CONTROL FUNCTIONS ##
+##############################
+
+generate_access_metadata() {
+	echo "${GIZA_OUT_CALL:-CALL} generate_access_metadata${GIZA_OUT_RESET:-}" >&3
+	get_all_pgp_key_ids_with_any_access | while read key
+	do
+		echo "Access: $(get_access_level_by_pgp_key_id "$key") $(get_pgp_key_id_for_freetext "$key") $(get_pgp_key_name_for_freetext "$key")"
+	done
+}
+
+get_all_pgp_key_ids() {
+	echo "${GIZA_OUT_CALL:-CALL} get_all_pgp_key_ids${GIZA_OUT_RESET:-}" >&3
+	{
+		get_all_pgp_key_ids_from_arg
+		get_all_pgp_key_ids_from_command_block
+		get_all_pgp_key_ids_from_metadata_block
+	} | sort | uniq
+}
+
+get_all_pgp_key_ids_with_any_access() {
+	echo "${GIZA_OUT_CALL:-CALL} get_all_pgp_key_ids_with_any_access${GIZA_OUT_RESET:-}" >&3
+	get_all_pgp_key_ids | while read key
+	do
+		if test "$(has_any_access_from_string "$(get_access_level_by_pgp_key_id "$key")")" = 'YES'
+		then
+			echo "$key"
+		fi 
+	done
+}
+
+get_all_pgp_key_ids_with_read_access() {
+	echo "${GIZA_OUT_CALL:-CALL} get_all_pgp_key_ids_with_read_access${GIZA_OUT_RESET:-}" >&3
+	get_all_pgp_key_ids | while read key
+	do
+		if test "$(has_read_access_from_string "$(get_access_level_by_pgp_key_id "$key")")" = 'YES'
+		then
+			echo "$key"
+		fi
+	done
+}
+
+get_access_level_by_pgp_key_id() {
+	echo "${GIZA_OUT_CALL:-CALL} get_access_level_by_pgp_key_id${GIZA_OUT_RESET:-}" >&3
+	access="$(get_access_level_for_key_from_arguments "$1")"
+	test -z "$access" && access="$(get_access_level_for_key_from_command "$1")"
+	test -z "$access" && access="$(get_access_level_for_key_from_metadata "$1")"
+	echo "$access"
+}
+
+get_access_level_for_key_from_arguments() {
+	echo "${GIZA_OUT_CALL:-CALL} get_access_level_for_key_from_arguments${GIZA_OUT_RESET:-}" >&3
+	needle="$(get_pgp_key_id_for_freetext "$1")"
+	mode='access'
+	get_arguments_for --access | while read line
+	do
+		if test "$mode" = 'recipients'
+		then
+			if test "$(get_pgp_key_id_for_freetext "$line")" = "$needle"
+			then
+				get_access_level_from_string "$access"
+				return
+			fi
+			mode='access'
+		else
+			access="$line"
+			mode='recipients'
+		fi
+	done
+}
+
+get_access_level_for_key_from_command() {
+	echo "${GIZA_OUT_CALL:-CALL} get_access_level_for_key_id_from_command${GIZA_OUT_RESET:-}" >&3
+	needle="$(get_pgp_key_id_for_freetext "$1")"
+	get_command_block_from_file | grep '^Access: ' | while read line
+	do
+		if test "$(get_pgp_key_id_for_freetext "$(echo "$line" | cut -d\  -f3)")" = "$needle"
+		then
+			get_access_level_from_string "$(echo "$line" | cut -d\  -f2)"
+		fi
+	done
+}
+
+get_access_level_for_key_from_metadata() {
+	echo "${GIZA_OUT_CALL:-CALL} get_access_level_for_key_id_from_metadata${GIZA_OUT_RESET:-}" >&3
+	needle="$(get_pgp_key_id_for_freetext "$1")"
+	get_metadata_block_from_file | grep '^Access: ' | while read line
+	do
+		if test "$(get_pgp_key_id_for_freetext "$(echo "$line" | cut -d\  -f3)")" = "$needle"
+		then
+			get_access_level_from_string "$(echo "$line" | cut -d\  -f2)"
+		fi
+	done
+}
+
+get_all_pgp_key_ids_from_arg() {
+	echo "${GIZA_OUT_CALL:-CALL} get_all_pgp_key_ids_from_arg${GIZA_OUT_RESET:-}" >&3
+	mode='access'
+	get_arguments_for --access | while read line
+	do
+		if test "$mode" = 'recipients'
+		then
+			mode='access'
+			get_pgp_key_id_for_freetext "$line"
+		else
+			mode='recipients'
+		fi
+	done
+}
+
+get_all_pgp_key_ids_from_command_block() {
+	echo "${GIZA_OUT_CALL:-CALL} get_all_pgp_key_ids_from_command_block${GIZA_OUT_RESET:-}" >&3
+	get_command_block_from_file | grep '^Access: ' | cut -d\  -f3 | while read key
+	do
+		get_pgp_key_id_for_freetext "$(echo "$key" | cut -d\  -f3)"
+	done
+}
+
+get_all_pgp_key_ids_from_metadata_block() {
+	echo "${GIZA_OUT_CALL:-CALL} get_all_pgp_key_ids_from_metadata_block${GIZA_OUT_RESET:-}" >&3
+	get_metadata_block_from_file | grep '^Access: ' | cut -d\  -f3 | while read key
+	do
+		get_pgp_key_id_for_freetext "$(echo "$key" | cut -d\  -f3)"
+	done
+}
+
+get_access_level_from_string() {
+	echo "${GIZA_OUT_CALL:-CALL} get_access_level_from_string${GIZA_OUT_RESET:-}" >&3
+	s='' # splitter
+	access="$1"
+	echo "+$access+" | grep --ignore-case --quiet '+read+' && echo -n "${s}READ" && s='+'
+	echo "+$access+" | grep --ignore-case --quiet '+write+' && echo -n "${s}WRITE" && s='+'
+	echo "+$access+" | grep --ignore-case --quiet '+admin+' && echo -n "${s}ADMIN"
+}
+
+has_any_access_from_string() {
+	echo "${GIZA_OUT_CALL:-CALL} has_any_access_from_string${GIZA_OUT_RESET:-}" >&3
+	r=NO
+	access="$1"
+	echo "+$access+" | grep --ignore-case --quiet '+read+' && r=YES
+	echo "+$access+" | grep --ignore-case --quiet '+write+' && r=YES
+	echo "+$access+" | grep --ignore-case --quiet '+admin+' && r=YES
+	echo $r
+}
+
+has_read_access_from_string() {
+	echo "${GIZA_OUT_CALL:-CALL} has_read_access_from_string${GIZA_OUT_RESET:-}" >&3
+	r=NO
+	access="$1"
+	echo "+$access+" | grep --ignore-case --quiet '+read+' && r=YES
+	echo $r
+}
+
+get_pgp_key_id_for_freetext() {
+	echo "${GIZA_OUT_CALL:-CALL} get_pgp_key_id_for_freetext${GIZA_OUT_RESET:-} $1" >&3
+	gpg --with-colons --list-keys "$1" | grep ^pub | while read key
+	do
+		if test "x$(echo "$key" | cut -d: -f2)" \!= 'xr'
+		then
+			echo "$key" | cut -d: -f5
+			return
+		fi
+	done
+}
+
+get_pgp_key_name_for_freetext() {
+	gpg --with-colons --list-keys "$1" | grep ^uid | while read key
+	do
+		if test "x$(echo "$key" | cut -d: -f2)" \!= 'xr'
+		then
+			echo "$key" | cut -d: -f10
+			return
+		fi
+	done
 }
 
 
