@@ -146,31 +146,22 @@ get_input_cleartext() {
 # out: cryptotext
 get_input_cryptotext() {
 	echo "${GIZA_OUT_CALL:-CALL} get_input_cryptotext${GIZA_OUT_RESET:-}" >&3
-	file="$(get_file)" || return 1
-	echo "VARI file=$file" >&3
-	if test -r "$file"
-	then
-		gpg --quiet --decrypt --no-tty --batch < "$file" 2>/dev/null \
-			| awk '/^-----BEGIN PGP MESSAGE-----$/,/^-----END PGP MESSAGE-----$/'
-	else
-		echo "IOER cannot read $file" >&3
-		return 1
-	fi
+	get_giza_file_contents | gpg --quiet --decrypt --no-tty --batch 2>/dev/null \
+		| awk '/^-----BEGIN PGP MESSAGE-----$/,/^-----END PGP MESSAGE-----$/'
 }
 
 # in: giza from stdin (may read from filesystem instead)
 # out: giza
 get_giza_file_contents() {
-	if [ ${GIZA_INPUT_CONSUMED:-0} -eq 1 ]
+	if test ${GIZA_INPUT_CONSUMED:-0} -eq 0
 	then
-		echo "$GIZA_INPUT"
-		return 0
+		file="$(get_file)"
+		echo "VARI file=$file" >&3
+		echo "${GIZA_OUT_INFO:-INFO} Consuming giza input file $file${GIZA_OUT_RESET:-}" >&3
+		export GIZA_INPUT="$(test -z "$file" && cat || cat "$file")"
+		echo "${GIZA_OUT_INFO:-INFO} Consumed giza input${GIZA_OUT_RESET:-}" >&3
+		test -z "$file" || export GIZA_INPUT_CONSUMED=1
 	fi
-	file="$(get_file)"
-	echo "INFO Consuming file $file" >&3
-	export GIZA_INPUT="$(test -z "$file" && cat || cat "$file")"
-	echo 'INFO Consumed' >&3
-	test -z "$file" || export GIZA_INPUT_CONSUMED=1
 	echo "$GIZA_INPUT"
 }
 
