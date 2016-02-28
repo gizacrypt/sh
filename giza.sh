@@ -24,6 +24,10 @@ main() {
 	exec 3>/dev/null
 	if has_flag --debug >/dev/null
 	then
+		export GIZA_OUT_RESET="$(echo G1swbQ== | base64 -D)"
+		export GIZA_OUT_FAIL="$(echo G1szMW0= | base64 -D)FAIL"
+		export GIZA_OUT_INFO="$(echo G1szNG0= | base64 -D)INFO"
+		export GIZA_OUT_CALL="$(echo G1szMm0= | base64 -D)CALL"
 		exec 3>&2
 	fi
 
@@ -57,11 +61,11 @@ flow_read() {
 
 flow_new() {
 	echo "FLOW new" >&3
-	echo "INFO obtaining cleartext" >&3
+	echo "${GIZA_OUT_INFO:-INFO} obtaining cleartext${GIZA_OUT_RESET:-}" >&3
 	clear="$(get_input_cleartext)"
-	echo "INFO encrypt using giza" >&3
+	echo "${GIZA_OUT_INFO:-INFO} encrypt using giza${GIZA_OUT_RESET:-}" >&3
 	giza="$(echo "$clear" | giza_from_cleartext)"
-	echo "INFO writing" >&3
+	echo "${GIZA_OUT_INFO:-INFO} writing${GIZA_OUT_RESET:-}" >&3
 	echo "$giza" | write_cryptotext_output
 }
 
@@ -121,19 +125,19 @@ write_cleartext_output() {
 # in: cleartext, only if not obtained through other means
 # out: cleartext
 get_input_cleartext() {
-	echo "CALL get_input_cleartext" >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_input_cleartext${GIZA_OUT_RESET:-}" >&3
 	if has_flag --cleartext-in >/dev/null
 	then
 		file="$(get_input_cleartext_file)"
 		cat "$file" && return 0 || return 1
 	fi
-	echo "INFO getting cleartext by decrypting cryptotext" >&3
+	echo "${GIZA_OUT_INFO:-INFO} getting cleartext by decrypting cryptotext${GIZA_OUT_RESET:-}" >&3
 	cryptotext="$(get_input_cryptotext)" || true
 	if test -n "$cryptotext"
 	then
 		echo "$cryptotext" | gpg --quiet --decrypt
 	else
-		echo "INFO got no cryptotext, reading cleartext from stdin" >&3
+		test -n "${TTY:-}" && echo "giza: Go ahead and type your message ..." >&2
 		tee
 	fi
 }
@@ -141,7 +145,7 @@ get_input_cleartext() {
 # in: giza
 # out: cryptotext
 get_input_cryptotext() {
-	echo "CALL get_input_cryptotext" >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_input_cryptotext${GIZA_OUT_RESET:-}" >&3
 	file="$(get_file)" || return 1
 	echo "VARI file=$file" >&3
 	if test -r "$file"
@@ -176,27 +180,27 @@ get_giza_file_contents() {
 ##############################
 
 pgp_sign() {
-	echo "CALL pgp_sign" >&3
+	echo "${GIZA_OUT_CALL:-CALL} pgp_sign${GIZA_OUT_RESET:-}" >&3
 	gpg --quiet --clearsign
 }
 
 # in: cleartext
 # out: cryptotext
 pgp_encrypt() {
-	echo "CALL pgp_encrypt" >&3
+	echo "${GIZA_OUT_CALL:-CALL} pgp_encrypt${GIZA_OUT_RESET:-}" >&3
 	recipient_gpg_arguments=$(get_recipient_gpg_arguments)
-	echo "ARGS $recipient_gpg_arguments" >&3
+	echo "ARGS recipient_gpg_arguments=$recipient_gpg_arguments" >&3
 	if test -n "$recipient_gpg_arguments"
 	then
 		gpg --quiet --armour --encrypt ${recipient_gpg_arguments}
 	else
-		echo "FAIL cannot make a working gpg command" >&3
+		echo "${GIZA_OUT_FAIL:-FAIL} cannot make a working gpg command${GIZA_OUT_RESET:-}" >&3
 		return 1
 	fi
 }
 
 get_recipient_gpg_arguments() {
-	echo "CALL get_recipient_gpg_arguments" >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_recipient_gpg_arguments${GIZA_OUT_RESET:-}" >&3
 	mode='access'
 	get_arguments_for --access | while read line
 	do
@@ -219,7 +223,7 @@ get_recipient_gpg_arguments() {
 # in: cryptotext
 # out: giza
 giza_from_cryptotext() {
-	echo "CALL giza_from_cryptotext" >&3
+	echo "${GIZA_OUT_CALL:-CALL} giza_from_cryptotext${GIZA_OUT_RESET:-}" >&3
 	# echo "$(tee)\n$(generate_metadata | pgp_sign)" | pgp_sign
 	contents="$(tee)"
 	metadata=$(generate_metadata)
@@ -232,14 +236,14 @@ ${signed_metadata}"
 # in: cleartext
 # out: giza
 giza_from_cleartext() {
-	echo "CALL giza_from_cleartext" >&3
+	echo "${GIZA_OUT_CALL:-CALL} giza_from_cleartext${GIZA_OUT_RESET:-}" >&3
 	cryptotext="$(pgp_encrypt)"
 	echo "$cryptotext" | giza_from_cryptotext
 }
 
 # out: giza
 giza_delete() {
-	echo "CALL giza_delete" >&3
+	echo "${GIZA_OUT_CALL:-CALL} giza_delete${GIZA_OUT_RESET:-}" >&3
 	# double sign for consistency,
 	# no concatenation of content is required though
 	generate_metadata | pgp_sign | pgp_sign
@@ -247,6 +251,7 @@ giza_delete() {
 
 # out: giza-metadata
 generate_metadata() {
+	echo "${GIZA_OUT_CALL:-CALL} generate_metadata${GIZA_OUT_RESET:-}" >&3
 	echo '-----BEGIN GIZA METADATA-----'
 	echo "Giza-Version: ${GIZA_VERSION}"
 	echo "Action: $(get_action)"
@@ -286,7 +291,7 @@ generate_metadata() {
 }
 
 edit_cleartext() {
-	echo 'CALL edit_cleartext' >&3
+	echo "${GIZA_OUT_CALL:-CALL} edit_cleartext${GIZA_OUT_RESET:-}" >&3
 	tmpdir="/tmp/giza.$(id -u)"
 	mkdir -p $tmpdir
 	tee > "$tmpdir/giza_clear.bin"
@@ -343,69 +348,69 @@ get_key_name_for_freetext() {
 ######################
 
 get_action() {
-	echo 'CALL get_action' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_action${GIZA_OUT_RESET:-}" >&3
 	get_action_from_arg 2>/dev/null || get_action_command_from_file 2>/dev/null
 }
 
 get_output_previous() {
-	echo 'CALL get_output_previous' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_output_previous${GIZA_OUT_RESET:-}" >&3
 	echo "MISS get_output_previous NOT IMPLEMENTED" >&3
 	return 1
 }
 
 get_output_basedon() {
-	echo 'CALL get_output_basedon' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_output_basedon${GIZA_OUT_RESET:-}" >&3
 	echo "MISS get_output_basedon NOT IMPLEMENTED" >&3
 	return 1
 }
 
 get_output_name_hash() {
-	echo 'CALL get_output_name_hash' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_output_name_hash${GIZA_OUT_RESET:-}" >&3
 	echo "MISS get_output_name_hash NOT IMPLEMENTED" >&3
 	return 1
 }
 
 get_output_name_plain() {
-	echo 'CALL get_output_name_plain' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_output_name_plain${GIZA_OUT_RESET:-}" >&3
 	get_output_name_plain_from_arg
 }
 
 get_output_comment_hash() {
-	echo 'CALL get_output_comment_hash' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_output_comment_hash${GIZA_OUT_RESET:-}" >&3
 	echo "MISS get_output_comment_hash NOT IMPLEMENTED" >&3
 	return 1
 }
 
 get_output_comment_plain() {
-	echo 'CALL get_output_comment_plain' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_output_comment_plain${GIZA_OUT_RESET:-}" >&3
 	get_output_comment_plain_from_arg
 }
 
 get_output_content_type_plain() {
-	echo 'CALL get_output_content_type_plain' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_output_content_type_plain${GIZA_OUT_RESET:-}" >&3
 	get_output_content_type_plain_from_arg 2>/dev/null || \
 	get_output_content_type_from_plain_input
 }
 
 get_input_cleartext_file() {
-	echo 'CALL get_input_cleartext_file' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_input_cleartext_file${GIZA_OUT_RESET:-}" >&3
 	get_input_cleartext_file_from_arg
 }
 
 is_equal_access() {
-	echo 'CALL is_equal_access' >&3
+	echo "${GIZA_OUT_CALL:-CALL} is_equal_access${GIZA_OUT_RESET:-}" >&3
 	echo "MISS is_equal_access NOT IMPLEMENTED" >&3
 	return 1
 }
 
 has_flag_hash_name() {
-	echo 'CALL has_flag_hash_name' >&3
+	echo "${GIZA_OUT_CALL:-CALL} has_flag_hash_name${GIZA_OUT_RESET:-}" >&3
 	echo "MISS has_flag_hash_name NOT IMPLEMENTED" >&3
 	return 1
 }
 
 has_flag_hash_comment() {
-	echo 'CALL has_flag_hash_comment' >&3
+	echo "${GIZA_OUT_CALL:-CALL} has_flag_hash_comment${GIZA_OUT_RESET:-}" >&3
 	echo "MISS has_flag_hash_comment NOT IMPLEMENTED" >&3
 	return 1
 }
@@ -416,7 +421,7 @@ has_flag_hash_comment() {
 ######################################
 
 get_output_content_type_from_plain_input() {
-	echo 'CALL get_output_content_type_from_plain_input' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_output_content_type_from_plain_input${GIZA_OUT_RESET:-}" >&3
 	cleartext="$(get_input_cleartext)"
 	contenttype="$(echo "$cleartext" | file --mime-type - | cut -d\  -f2)"
 	echo "$contenttype"
@@ -428,15 +433,15 @@ get_output_content_type_from_plain_input() {
 ##########################################
 
 get_action_command_from_file() {
+	echo "${GIZA_OUT_CALL:-CALL} get_action_command_from_file${GIZA_OUT_RESET:-}" >&3
 	action="$(get_command_block_from_file | sed -n '/Action:/ s/.*: //p')"
-	echo 'CALL get_action_command_from_file' >&3
 	echo "VARI action=$action" >&3
 	echo "$action"
 }
 
 get_method_command_from_file() {
+	echo "${GIZA_OUT_CALL:-CALL} get_method_command_from_file${GIZA_OUT_RESET:-}" >&3
 	method="$(get_command_block_from_file | sed -n '/Method:/ s/.*: //p')"
-	echo 'CALL get_method_command_from_file' >&3
 	echo "VARI method=$method" >&3
 	echo "$method"
 }
@@ -483,7 +488,7 @@ get_file() {
 ###########################
 
 get_action_from_arg() {
-	echo 'CALL get_action_from_arg' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_action_from_arg${GIZA_OUT_RESET:-}" >&3
 	found=0
 	action=
 	for flag in $(get_flags)
@@ -523,22 +528,22 @@ get_action_from_arg() {
 }
 
 get_input_cleartext_file_from_arg() {
-	echo 'CALL get_input_cleartext_file_from_arg' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_input_cleartext_file_from_arg${GIZA_OUT_RESET:-}" >&3
 	get_arguments_for --cleartext-in
 }
 
 get_output_comment_plain_from_arg() {
-	echo 'CALL get_output_comment_plain_from_arg' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_output_comment_plain_from_arg${GIZA_OUT_RESET:-}" >&3
 	get_arguments_for --comment
 }
 
 get_output_name_plain_from_arg() {
-	echo 'CALL get_output_name_plain_from_arg' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_output_name_plain_from_arg${GIZA_OUT_RESET:-}" >&3
 	get_arguments_for --name
 }
 
 get_output_content_type_plain_from_arg() {
-	echo 'CALL get_output_content_type_plain_from_arg' >&3
+	echo "${GIZA_OUT_CALL:-CALL} get_output_content_type_plain_from_arg${GIZA_OUT_RESET:-}" >&3
 	get_arguments_for --content-type
 }
 
@@ -578,7 +583,7 @@ get_skip_for_argument() {
 
 		# stdin
 		'-') echo 0;return 0;;
-		*) echo "FAIL unknown argument $arg" >&3;echo 0
+		*) echo "${GIZA_OUT_FAIL:-FAIL} unknown argument $arg" >&3;echo 0
 	esac
 }
 
