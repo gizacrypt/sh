@@ -384,14 +384,14 @@ get_output_content_type_from_plain_input() {
 
 get_action_command_from_file() {
 	echo "${GIZA_OUT_CALL:-CALL} get_action_command_from_file${GIZA_OUT_RESET:-}" >&3
-	action="$(get_command_block_from_file | sed -n '/Action:/ s/.*: //p')"
+	action="$(get_command_block_from_file | sed -n '/^Action:/ s/.*: //p')"
 	echo "VARI action=$action" >&3
 	echo "$action"
 }
 
 get_method_command_from_file() {
 	echo "${GIZA_OUT_CALL:-CALL} get_method_command_from_file${GIZA_OUT_RESET:-}" >&3
-	method="$(get_command_block_from_file | sed -n '/Method:/ s/.*: //p')"
+	method="$(get_command_block_from_file | sed -n '/^Method:/ s/.*: //p')"
 	echo "VARI method=$method" >&3
 	echo "$method"
 }
@@ -406,28 +406,28 @@ get_metadata_block_from_file() {
 
 get_output_name_plain_from_command() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_name_plain_from_command${GIZA_OUT_RESET:-}" >&3
-	name="$(get_command_block_from_file | sed -n '/Name:/ s/.*: //p')"
+	name="$(get_command_block_from_file | sed -n '/^Name:/ s/.*: //p')"
 	echo "VARI name=$name" >&3
 	echo "$name"
 }
 
 get_output_name_plain_from_metadata() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_name_plain_from_metadata${GIZA_OUT_RESET:-}" >&3
-	name="$(get_metadata_block_from_file | sed -n '/Name:/ s/.*: //p')"
+	name="$(get_metadata_block_from_file | sed -n '/^Name:/ s/.*: //p')"
 	echo "VARI name=$name" >&3
 	echo "$name"
 }
 
 get_output_comment_plain_from_command() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_comment_plain_from_command${GIZA_OUT_RESET:-}" >&3
-	comment="$(get_command_block_from_file | sed -n '/Comment:/ s/.*: //p')"
+	comment="$(get_command_block_from_file | sed -n '/^Comment:/ s/.*: //p')"
 	echo "VARI comment=$comment" >&3
 	echo "$comment"
 }
 
 get_output_comment_plain_from_metadata() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_comment_plain_from_metadata${GIZA_OUT_RESET:-}" >&3
-	comment="$(get_metadata_block_from_file | sed -n '/Comment:/ s/.*: //p')"
+	comment="$(get_metadata_block_from_file | sed -n '/^Comment:/ s/.*: //p')"
 	echo "VARI comment=$comment" >&3
 	echo "$comment"
 }
@@ -562,7 +562,7 @@ get_all_pgp_key_ids_from_metadata_block() {
 get_access_level_from_string() {
 	echo "${GIZA_OUT_CALL:-CALL} get_access_level_from_string${GIZA_OUT_RESET:-}" >&3
 	s='' # splitter
-	access="$1"
+	access="$(sed -e 's/|/+/g' "$1")"
 	echo "+$access+" | grep --ignore-case --quiet '+read+' && echo -n "${s}READ" && s='+'
 	echo "+$access+" | grep --ignore-case --quiet '+write+' && echo -n "${s}WRITE" && s='+'
 	echo "+$access+" | grep --ignore-case --quiet '+admin+' && echo -n "${s}ADMIN"
@@ -571,7 +571,7 @@ get_access_level_from_string() {
 has_any_access_from_string() {
 	echo "${GIZA_OUT_CALL:-CALL} has_any_access_from_string${GIZA_OUT_RESET:-}" >&3
 	r=NO
-	access="$1"
+	access="$(sed -e 's/|/+/g' "$1")"
 	echo "+$access+" | grep --ignore-case --quiet '+read+' && r=YES
 	echo "+$access+" | grep --ignore-case --quiet '+write+' && r=YES
 	echo "+$access+" | grep --ignore-case --quiet '+admin+' && r=YES
@@ -581,7 +581,7 @@ has_any_access_from_string() {
 has_read_access_from_string() {
 	echo "${GIZA_OUT_CALL:-CALL} has_read_access_from_string${GIZA_OUT_RESET:-}" >&3
 	r=NO
-	access="$1"
+	access="$(sed -e 's/|/+/g' "$1")"
 	echo "+$access+" | grep --ignore-case --quiet '+read+' && r=YES
 	echo $r
 }
