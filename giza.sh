@@ -131,12 +131,13 @@ get_input_cleartext() {
 		file="$(get_input_cleartext_file)"
 		cat "$file" && return 0 || return 1
 	fi
-	echo "${GIZA_OUT_INFO:-INFO} getting cleartext by decrypting cryptotext${GIZA_OUT_RESET:-}" >&3
 	cryptotext="$(get_input_cryptotext)" || true
 	if test -n "$cryptotext"
 	then
+		echo "${GIZA_OUT_INFO:-INFO} getting cleartext by decrypting cryptotext${GIZA_OUT_RESET:-}" >&3
 		echo "$cryptotext" | gpg --quiet --decrypt
 	else
+		echo "${GIZA_OUT_INFO:-INFO} getting cleartext by reading stdin${GIZA_OUT_RESET:-}" >&3
 		test -n "${TTY:-}" && echo "giza: Go ahead and type your message ..." >&2
 		tee
 	fi
@@ -304,7 +305,7 @@ get_output_name_hash() {
 
 get_output_name_plain() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_name_plain${GIZA_OUT_RESET:-}" >&3
-	name="$(get_output_name_plain_from_arg || true)"
+	name="$(get_output_name_plain_from_arg 2>/dev/null || true)"
 	test -z "$name" && name="$(get_output_name_plain_from_command || true)"
 	test -z "$name" && name="$(get_output_name_plain_from_metadata || true)"
 	test -z "$name" && name="$(ask_user "name")"
@@ -320,7 +321,7 @@ get_output_comment_hash() {
 
 get_output_comment_plain() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_comment_plain${GIZA_OUT_RESET:-}" >&3
-	comment="$(get_output_comment_plain_from_arg || true)"
+	comment="$(get_output_comment_plain_from_arg 2>/dev/null || true)"
 	test -z "$comment" && comment="$(get_output_comment_plain_from_command || true)"
 	test -z "$comment" && comment="$(get_output_comment_plain_from_metadata || true)"
 	test -z "$comment" && comment="$(ask_user "comment")"
@@ -439,7 +440,7 @@ generate_access_metadata() {
 get_all_pgp_key_ids() {
 	echo "${GIZA_OUT_CALL:-CALL} get_all_pgp_key_ids${GIZA_OUT_RESET:-}" >&3
 	{
-		get_all_pgp_key_ids_from_arg
+		get_all_pgp_key_ids_from_arg 2>/dev/null
 		get_all_pgp_key_ids_from_command_block
 		get_all_pgp_key_ids_from_metadata_block
 	} | sort | uniq
@@ -479,7 +480,7 @@ get_access_level_for_key_from_arguments() {
 	echo "${GIZA_OUT_CALL:-CALL} get_access_level_for_key_from_arguments${GIZA_OUT_RESET:-}" >&3
 	needle="$(get_pgp_key_id_for_freetext "$1")"
 	mode='access'
-	get_arguments_for --access | while read line
+	get_arguments_for --access 2>/dev/null | while read line
 	do
 		if test "$mode" = 'recipients'
 		then
@@ -743,7 +744,7 @@ get_skip_for_argument() {
 
 		# stdin
 		'-') echo 0;return 0;;
-		*) echo "${GIZA_OUT_FAIL:-FAIL} unknown argument $arg" >&3;echo 0
+		*) echo "${GIZA_OUT_FAIL:-FAIL} unknown argument $arg${GIZA_OUT_RESET:-}" >&3;echo 0
 	esac
 }
 
