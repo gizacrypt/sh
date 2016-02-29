@@ -314,6 +314,7 @@ get_output_name_plain() {
 	name="$(get_output_name_plain_from_arg || true)"
 	test -z "$name" && name="$(get_output_name_plain_from_command || true)"
 	test -z "$name" && name="$(get_output_name_plain_from_metadata || true)"
+	test -z "$name" && name="$(ask_user "name")"
 	echo "$name"
 	test -n "$name"
 }
@@ -329,6 +330,7 @@ get_output_comment_plain() {
 	comment="$(get_output_comment_plain_from_arg || true)"
 	test -z "$comment" && comment="$(get_output_comment_plain_from_command || true)"
 	test -z "$comment" && comment="$(get_output_comment_plain_from_metadata || true)"
+	test -z "$comment" && comment="$(ask_user "comment")"
 	echo "$comment"
 	test -n "$comment"
 }
@@ -707,6 +709,15 @@ get_output_content_type_plain_from_arg() {
 ############################################
 ## COMMANDLINE ARGUMENT PARSING FUNCTIONS ##
 ############################################
+
+# If the user forgot to specify an argument, but started Giza interactively, we can ask.
+ask_user() {
+	test -z "$TTY" && return 1
+	echo -n "Enter a $1: " >&2
+	read r < "$TTY"
+	echo "$r"
+	test -n "$r"
+}
 
 # Get the amount of arguments to skip after the specified argument
 get_skip_for_argument() {
