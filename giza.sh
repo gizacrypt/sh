@@ -135,7 +135,7 @@ get_input_cleartext() {
 	if test -n "$cryptotext"
 	then
 		echo "${GIZA_OUT_INFO:-INFO} getting cleartext by decrypting cryptotext${GIZA_OUT_RESET:-}" >&3
-		echo "$cryptotext" | gpg --quiet --decrypt
+		echo "$cryptotext" | gpg --quiet --decrypt --no-tty --batch 2>/dev/null
 	else
 		echo "${GIZA_OUT_INFO:-INFO} getting cleartext by reading stdin${GIZA_OUT_RESET:-}" >&3
 		test -n "${TTY:-}" && echo "giza: Go ahead and type your message ..." >&2
@@ -401,7 +401,11 @@ get_command_block_from_file() {
 }
 
 get_metadata_block_from_file() {
-	get_giza_file_contents | awk '/^-----BEGIN GIZA METADATA-----$/,/^-----END GIZA METADATA-----$/'
+	get_giza_file_contents \
+		| gpg --quiet --decrypt --no-tty --batch 2>/dev/null \
+		| awk '/^-----BEGIN PGP SIGNED MESSAGE-----$/,/^-----END PGP SIGNATURE-----$/' \
+		| gpg --quiet --decrypt --no-tty --batch 2>/dev/null \
+		| awk '/^-----BEGIN GIZA METADATA-----$/,/^-----END GIZA METADATA-----$/'
 }
 
 get_output_name_plain_from_command() {
@@ -562,7 +566,7 @@ get_all_pgp_key_ids_from_metadata_block() {
 get_access_level_from_string() {
 	echo "${GIZA_OUT_CALL:-CALL} get_access_level_from_string${GIZA_OUT_RESET:-}" >&3
 	s='' # splitter
-	access="$(sed -e 's/|/+/g' "$1")"
+	access="$(echo "$1" | sed -e 's/|/+/g')"
 	echo "+$access+" | grep --ignore-case --quiet '+read+' && echo -n "${s}READ" && s='+'
 	echo "+$access+" | grep --ignore-case --quiet '+write+' && echo -n "${s}WRITE" && s='+'
 	echo "+$access+" | grep --ignore-case --quiet '+admin+' && echo -n "${s}ADMIN"
@@ -571,7 +575,7 @@ get_access_level_from_string() {
 has_any_access_from_string() {
 	echo "${GIZA_OUT_CALL:-CALL} has_any_access_from_string${GIZA_OUT_RESET:-}" >&3
 	r=NO
-	access="$(sed -e 's/|/+/g' "$1")"
+	access="$(echo "$1" | sed -e 's/|/+/g')"
 	echo "+$access+" | grep --ignore-case --quiet '+read+' && r=YES
 	echo "+$access+" | grep --ignore-case --quiet '+write+' && r=YES
 	echo "+$access+" | grep --ignore-case --quiet '+admin+' && r=YES
@@ -581,7 +585,7 @@ has_any_access_from_string() {
 has_read_access_from_string() {
 	echo "${GIZA_OUT_CALL:-CALL} has_read_access_from_string${GIZA_OUT_RESET:-}" >&3
 	r=NO
-	access="$(sed -e 's/|/+/g' "$1")"
+	access="$(echo "$1" | sed -e 's/|/+/g')"
 	echo "+$access+" | grep --ignore-case --quiet '+read+' && r=YES
 	echo $r
 }
