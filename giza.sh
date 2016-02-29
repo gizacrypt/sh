@@ -269,11 +269,18 @@ generate_metadata() {
 
 edit_cleartext() {
 	echo "${GIZA_OUT_CALL:-CALL} edit_cleartext${GIZA_OUT_RESET:-}" >&3
-	tmpdir="/tmp/giza.$(id -u)"
-	mkdir -p $tmpdir
-	tee > "$tmpdir/giza_clear.bin"
-	${EDITOR:=vim} "$tmpdir/giza_clear.bin" < "$TTY" > "$TTY"
-	cat "$tmpdir/giza_clear.bin" && rm "$tmpdir/giza_clear.bin"
+	if test -n "${TTY:-}"
+	then
+		tmpdir="/tmp/giza.$(id -u)"
+		mkdir -p $tmpdir
+		tee > "$tmpdir/giza_clear.bin"
+		${EDITOR:=vim} "$tmpdir/giza_clear.bin" < "$TTY" > "$TTY"
+		cat "$tmpdir/giza_clear.bin" && rm "$tmpdir/giza_clear.bin"
+	else
+		echo 'Cannot open editor because no TTY available.' >&2
+		echo 'Please refrain from piping when requesting an editor.' >&2
+		echo '' >&2
+	fi
 }
 
 ######################
@@ -706,10 +713,16 @@ get_output_content_type_plain_from_arg() {
 
 # If the user forgot to specify an argument, but started Giza interactively, we can ask.
 ask_user() {
-	test -z "$TTY" && return 1
-	echo -n "Enter a $1: " >&2
-	read r < "$TTY"
-	echo "$r"
+	r=
+	if test -z "${TTY:-}"
+	then
+		echo "Provide a $1 with --$1 on the commandline." >&2
+		echo '' >&2
+	else
+		echo -n "Enter a $1: " >&2
+		read r < "${TTY:-}"
+		echo "$r"
+	fi
 	test -n "$r"
 }
 
