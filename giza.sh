@@ -153,16 +153,9 @@ get_input_cryptotext() {
 # in: giza from stdin (may read from filesystem instead)
 # out: giza
 get_giza_file_contents() {
-	if test ${GIZA_INPUT_CONSUMED:-0} -eq 0
-	then
-		file="$(get_file)"
-		echo "VARI file=$file" >&3
-		echo "${GIZA_OUT_INFO:-INFO} Consuming giza input file $file${GIZA_OUT_RESET:-}" >&3
-		export GIZA_INPUT="$(test -z "$file" && cat || cat "$file")"
-		echo "${GIZA_OUT_INFO:-INFO} Consumed giza input${GIZA_OUT_RESET:-}" >&3
-		test -z "$file" || export GIZA_INPUT_CONSUMED=1
-	fi
-	echo "$GIZA_INPUT"
+	file="$(get_file)"
+	echo "VARI file=$file" >&3
+	test -n "$file" && cat "$file"
 }
 
 
