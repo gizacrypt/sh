@@ -28,6 +28,7 @@ main() {
 		export GIZA_OUT_FAIL="$(echo G1szMW0= | base64 --decode)FAIL"
 		export GIZA_OUT_INFO="$(echo G1szNG0= | base64 --decode)INFO"
 		export GIZA_OUT_CALL="$(echo G1szMm0= | base64 --decode)CALL"
+		export GIZA_OUT_EXEC="$(echo G1s0MDszNzsxbQ== | base64 --decode)EXEC"
 		exec 3>&2
 	fi
 
@@ -135,6 +136,7 @@ get_input_cleartext() {
 	if test -n "$cryptotext"
 	then
 		echo "${GIZA_OUT_INFO:-INFO} getting cleartext by decrypting cryptotext${GIZA_OUT_RESET:-}" >&3
+		echo "${GIZA_OUT_EXEC:-EXEC} gpg --quiet --decrypt${GIZA_OUT_RESET:-}" >&3
 		echo "$cryptotext" | gpg --quiet --decrypt
 	else
 		echo "${GIZA_OUT_INFO:-INFO} getting cleartext by reading stdin${GIZA_OUT_RESET:-}" >&3
@@ -147,7 +149,8 @@ get_input_cleartext() {
 # out: cryptotext
 get_input_cryptotext() {
 	echo "${GIZA_OUT_CALL:-CALL} get_input_cryptotext${GIZA_OUT_RESET:-}" >&3
-	get_giza_file_contents | gpg --quiet --decrypt --no-tty --batch 2>/dev/null \
+	echo "${GIZA_OUT_EXEC:-EXEC} gpg --quiet --decrypt --no-tty --batch${GIZA_OUT_RESET:-}" >&3
+	get_giza_file_contents | gpg --quiet --decrypt --no-tty --batch 2>&3 \
 		| awk '/^-----BEGIN PGP MESSAGE-----$/,/^-----END PGP MESSAGE-----$/'
 }
 
@@ -166,6 +169,7 @@ get_giza_file_contents() {
 
 pgp_sign() {
 	echo "${GIZA_OUT_CALL:-CALL} pgp_sign${GIZA_OUT_RESET:-}" >&3
+	echo "${GIZA_OUT_EXEC:-EXEC} gpg --clearsign${GIZA_OUT_RESET:-}" >&3
 	gpg --quiet --clearsign
 }
 
@@ -177,6 +181,7 @@ pgp_encrypt() {
 	echo "ARGS recipient_gpg_arguments=$recipient_gpg_arguments" >&3
 	if test -n "$recipient_gpg_arguments"
 	then
+		echo "${GIZA_OUT_EXEC:-EXEC} gpg --quiet --armour --encrypt ${recipient_gpg_arguments}${GIZA_OUT_RESET:-}" >&3
 		gpg --quiet --armour --encrypt ${recipient_gpg_arguments}
 	else
 		echo "${GIZA_OUT_FAIL:-FAIL} cannot make a working gpg command${GIZA_OUT_RESET:-}" >&3
