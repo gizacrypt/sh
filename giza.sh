@@ -24,10 +24,10 @@ main() {
 	exec 3>/dev/null
 	if has_flag --debug >/dev/null
 	then
-		export GIZA_OUT_RESET="$(echo G1swbQ== | base64 -D)"
-		export GIZA_OUT_FAIL="$(echo G1szMW0= | base64 -D)FAIL"
-		export GIZA_OUT_INFO="$(echo G1szNG0= | base64 -D)INFO"
-		export GIZA_OUT_CALL="$(echo G1szMm0= | base64 -D)CALL"
+		export GIZA_OUT_RESET="$(echo G1swbQ== | base64 --decode)"
+		export GIZA_OUT_FAIL="$(echo G1szMW0= | base64 --decode)FAIL"
+		export GIZA_OUT_INFO="$(echo G1szNG0= | base64 --decode)INFO"
+		export GIZA_OUT_CALL="$(echo G1szMm0= | base64 --decode)CALL"
 		exec 3>&2
 	fi
 
