@@ -299,14 +299,18 @@ get_action() {
 
 get_output_previous() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_previous${GIZA_OUT_RESET:-}" >&3
-	echo "MISS get_output_previous NOT IMPLEMENTED" >&3
-	return 1
+	get_output_previous_from_arg 2>/dev/null || \
+	get_output_previous_from_command || \
+	get_output_previous_from_metadata || \
+	# Looks like no previous is defined, guessing it's the same as based-on
+	get_output_basedon
 }
 
 get_output_basedon() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_basedon${GIZA_OUT_RESET:-}" >&3
-	echo "MISS get_output_basedon NOT IMPLEMENTED" >&3
-	return 1
+	get_output_basedon_from_arg 2>/dev/null || \
+	get_output_basedon_from_command || \
+	get_output_basedon_from_metadata
 }
 
 get_output_name_hash() {
@@ -442,6 +446,40 @@ get_output_comment_plain_from_metadata() {
 	echo "VARI comment=$comment" >&3
 	echo -n "$comment"
 	test -n "$comment"
+}
+
+get_output_basedon_from_command() {
+	echo "${GIZA_OUT_CALL:-CALL} get_output_basedon_from_command${GIZA_OUT_RESET:-}" >&3
+	basedOn="$(get_command_block_from_file | sed -n '/^Based-On:/ s/.*: //p')"
+	echo "VARI basedOn=$basedOn" >&3
+	echo -n "$basedOn"
+	test -n "$basedOn"
+}
+
+get_output_basedon_from_metadata() {
+	# IMPORTANT: Not reading Based-On, but reading Revision instead
+	echo "${GIZA_OUT_CALL:-CALL} get_output_basedon_from_metadata${GIZA_OUT_RESET:-}" >&3
+	basedOn="$(get_metadata_block_from_file | sed -n '/^Revision:/ s/.*: //p')"
+	echo "VARI basedOn=$basedOn" >&3
+	echo -n "$basedOn"
+	test -n "$basedOn"
+}
+
+get_output_previous_from_command() {
+	echo "${GIZA_OUT_CALL:-CALL} get_output_previous_from_command${GIZA_OUT_RESET:-}" >&3
+	basedOn="$(get_command_block_from_file | sed -n '/^Previous:/ s/.*: //p')"
+	echo "VARI basedOn=$basedOn" >&3
+	echo -n "$basedOn"
+	test -n "$basedOn"
+}
+
+get_output_previous_from_metadata() {
+	# IMPORTANT: Not reading Previous, but reading Revision instead
+	echo "${GIZA_OUT_CALL:-CALL} get_output_previous_from_metadata${GIZA_OUT_RESET:-}" >&3
+	basedOn="$(get_metadata_block_from_file | sed -n '/^Revision:/ s/.*: //p')"
+	echo "VARI basedOn=$basedOn" >&3
+	echo -n "$basedOn"
+	test -n "$basedOn"
 }
 
 ##############################
@@ -716,6 +754,16 @@ get_output_name_plain_from_arg() {
 get_output_content_type_plain_from_arg() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_content_type_plain_from_arg${GIZA_OUT_RESET:-}" >&3
 	get_arguments_for --content-type
+}
+
+get_output_basedon_from_arg() {
+	echo "${GIZA_OUT_CALL:-CALL} get_output_basedon_from_arg${GIZA_OUT_RESET:-}" >&3
+	get_arguments_for --based-on
+}
+
+get_output_previous_from_arg() {
+	echo "${GIZA_OUT_CALL:-CALL} get_output_previous_from_arg${GIZA_OUT_RESET:-}" >&3
+	get_arguments_for --latest
 }
 
 
