@@ -312,12 +312,10 @@ get_output_name_hash() {
 
 get_output_name_plain() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_name_plain${GIZA_OUT_RESET:-}" >&3
-	name="$(get_output_name_plain_from_arg 2>/dev/null || true)"
-	test -z "$name" && name="$(get_output_name_plain_from_command || true)"
-	test -z "$name" && name="$(get_output_name_plain_from_metadata || true)"
-	test -z "$name" && name="$(ask_user "name")"
-	echo "$name"
-	test -n "$name"
+	get_output_name_plain_from_arg 2>/dev/null || \
+	get_output_name_plain_from_command || \
+	get_output_name_plain_from_metadata || \
+	ask_user "name"
 }
 
 get_output_comment_hash() {
@@ -328,12 +326,10 @@ get_output_comment_hash() {
 
 get_output_comment_plain() {
 	echo "${GIZA_OUT_CALL:-CALL} get_output_comment_plain${GIZA_OUT_RESET:-}" >&3
-	comment="$(get_output_comment_plain_from_arg 2>/dev/null || true)"
-	test -z "$comment" && comment="$(get_output_comment_plain_from_command || true)"
-	test -z "$comment" && comment="$(get_output_comment_plain_from_metadata || true)"
-	test -z "$comment" && comment="$(ask_user "comment")"
-	echo "$comment"
-	test -n "$comment"
+	get_output_comment_plain_from_arg 2>/dev/null || \
+	get_output_comment_plain_from_command || \
+	get_output_comment_plain_from_metadata || \
+	ask_user "comment"
 }
 
 get_output_content_type_plain() {
@@ -413,6 +409,7 @@ get_output_name_plain_from_command() {
 	name="$(get_command_block_from_file | sed -n '/^Name:/ s/.*: //p')"
 	echo "VARI name=$name" >&3
 	echo "$name"
+	test -n "$name"
 }
 
 get_output_name_plain_from_metadata() {
@@ -420,6 +417,7 @@ get_output_name_plain_from_metadata() {
 	name="$(get_metadata_block_from_file | sed -n '/^Name:/ s/.*: //p')"
 	echo "VARI name=$name" >&3
 	echo "$name"
+	test -n "$name"
 }
 
 get_output_comment_plain_from_command() {
@@ -427,6 +425,7 @@ get_output_comment_plain_from_command() {
 	comment="$(get_command_block_from_file | sed -n '/^Comment:/ s/.*: //p')"
 	echo "VARI comment=$comment" >&3
 	echo "$comment"
+	test -n "$comment"
 }
 
 get_output_comment_plain_from_metadata() {
@@ -434,6 +433,7 @@ get_output_comment_plain_from_metadata() {
 	comment="$(get_metadata_block_from_file | sed -n '/^Comment:/ s/.*: //p')"
 	echo "VARI comment=$comment" >&3
 	echo "$comment"
+	test -n "$comment"
 }
 
 ##############################
