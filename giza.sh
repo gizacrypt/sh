@@ -135,7 +135,7 @@ get_input_cleartext() {
 	if test -n "$cryptotext"
 	then
 		echo "${GIZA_OUT_INFO:-INFO} getting cleartext by decrypting cryptotext${GIZA_OUT_RESET:-}" >&3
-		echo "$cryptotext" | gpg --quiet --decrypt --no-tty --batch 2>/dev/null
+		echo "$cryptotext" | gpg --quiet --decrypt
 	else
 		echo "${GIZA_OUT_INFO:-INFO} getting cleartext by reading stdin${GIZA_OUT_RESET:-}" >&3
 		test -n "${TTY:-}" && echo "giza: Go ahead and type your message ..." >&2
