@@ -169,8 +169,15 @@ get_giza_file_contents() {
 
 pgp_sign() {
 	echo "${GIZA_OUT_CALL:-CALL} pgp_sign${GIZA_OUT_RESET:-}" >&3
+	sign_key="$(get_my_pgp_key_ids | head -n1)"
+	if test -z "$sign_key"
+	then
+		echo "The local keychain does not contain the private key for any of the recipients." >&2
+		return 1
+	fi
+	echo "${GIZA_OUT_INFO:-INFO} signing with${GIZA_OUT_RESET:-} $sign_key" >&3
 	echo "${GIZA_OUT_EXEC:-EXEC} gpg --clearsign${GIZA_OUT_RESET:-}" >&3
-	gpg --quiet --clearsign
+	gpg --quiet --clearsign --default-key "$sign_key"
 }
 
 # in: cleartext
@@ -501,6 +508,16 @@ get_all_pgp_key_ids() {
 		get_all_pgp_key_ids_from_command_block
 		get_all_pgp_key_ids_from_metadata_block
 	} | sort | uniq
+}
+
+get_my_pgp_key_ids() {
+	get_all_pgp_key_ids | while read key
+	do
+		gpg --list-secret-keys --with-colons | grep ^sec: | cut -d: -f5 | while read seckey
+		do
+			test "$key" = "$seckey" && echo "$key"
+		done
+	done
 }
 
 get_all_pgp_key_ids_with_any_access() {
