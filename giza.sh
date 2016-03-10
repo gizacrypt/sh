@@ -6,6 +6,7 @@ GIZA_VERSION="0.1"
 PROGNAME="$(basename "$0")"
 PROGDIR="$(dirname "$0")"
 ARGS="$@"
+GIZA_CLEARTEXT=''
 [ "x$GIZA_NOW" = 'x' ] && GIZA_NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)" ||\
 	echo 'WARNING: $GIZA_NOW is set, not using current time!' >&2
 GIZA_USAGE="usage: $PROGNAME [OPTION]... [FILE]"
@@ -62,19 +63,12 @@ flow_read() {
 
 flow_new() {
 	echo "FLOW new" >&3
-	echo "${GIZA_OUT_INFO:-INFO} obtaining cleartext${GIZA_OUT_RESET:-}" >&3
-	clear="$(get_input_cleartext)"
-	echo "${GIZA_OUT_INFO:-INFO} encrypt using giza${GIZA_OUT_RESET:-}" >&3
-	giza="$(echo "$clear" | giza_from_cleartext)"
-	echo "${GIZA_OUT_INFO:-INFO} writing${GIZA_OUT_RESET:-}" >&3
-	echo "$giza" | write_cryptotext_output
+	get_input_cleartext | giza_from_cleartext | write_cryptotext_output
 }
 
 flow_write() {
 	echo "FLOW write" >&3
-	clear="$(get_input_cleartext)"
-	edited="$(echo "$clear" | edit_cleartext)"
-	echo "$edited" | giza_from_cleartext | write_cryptotext_output
+	get_input_cleartext | edit_cleartext | giza_from_cleartext | write_cryptotext_output
 }
 
 flow_update() {
@@ -186,10 +180,12 @@ pgp_encrypt() {
 	echo "${GIZA_OUT_CALL:-CALL} pgp_encrypt${GIZA_OUT_RESET:-}" >&3
 	recipient_gpg_arguments=$(get_recipient_gpg_arguments)
 	echo "ARGS recipient_gpg_arguments=$recipient_gpg_arguments" >&3
+	# Prevent the gpg binary from starting prematurely
+	cleartext="$(tee)"
 	if test -n "$recipient_gpg_arguments"
 	then
 		echo "${GIZA_OUT_EXEC:-EXEC} gpg --quiet --armour --encrypt ${recipient_gpg_arguments}${GIZA_OUT_RESET:-}" >&3
-		gpg --quiet --armour --encrypt ${recipient_gpg_arguments}
+		echo "$cleartext" | gpg --quiet --armour --encrypt ${recipient_gpg_arguments}
 	else
 		echo "${GIZA_OUT_FAIL:-FAIL} cannot make a working gpg command${GIZA_OUT_RESET:-}" >&3
 		return 1
