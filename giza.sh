@@ -515,7 +515,7 @@ get_my_pgp_key_ids() {
 	do
 		gpg --list-secret-keys --with-colons | grep ^sec: | cut -d: -f5 | while read seckey
 		do
-			test "$key" = "$seckey" && echo "$key"
+			test "$key" = "$seckey" && echo "$key" || true
 		done
 	done
 }
