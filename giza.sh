@@ -255,18 +255,22 @@ generate_metadata() {
 	then
 		echo -n 'Name-Hash: '
 		get_output_name_hash
+		echo
 	else
 		echo -n 'Name: '
 		get_output_name_plain
+		echo
 	fi
 
 	if has_flag_hash_comment >/dev/null
 	then
 		echo -n 'Comment-Hash: '
 		get_output_comment_hash
+		echo
 	else
 		echo -n 'Comment: '
 		get_output_comment_plain
+		echo
 	fi
 
 	generate_access_metadata
